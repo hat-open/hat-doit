@@ -23,9 +23,9 @@ def init(python_paths: typing.List[os.PathLike] = [],
     python_paths = [str(Path(i).resolve()) for i in python_paths]
     sys.path = [*python_paths, *sys.path]
     os.environ['PYTHONPATH'] = os.pathsep.join(
-        *(path for path in itertools.chain(python_paths,
-                                           [os.environ.get('PYTHONPATH')])
-          if path))
+        (path for path in itertools.chain(python_paths,
+                                          [os.environ.get('PYTHONPATH')])
+         if path))
 
     num_process = os.environ.get('DOIT_NUM_PROCESS')
     if num_process:
