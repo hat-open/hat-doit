@@ -12,8 +12,8 @@ Končar - Power Plant and Electric Traction Engineering Inc.
 
 For more information see:
 
-    * Hat Open homepage - `<https://hat-open.com>`_
     * hat-doit git repository - `<https://github.com/hat-open/hat-doit.git>`_
+    * Hat Open homepage - `<https://hat-open.com>`_
 
 .. warning::
 
@@ -21,10 +21,12 @@ For more information see:
     functionality and API are unstable.
 
 
-About
------
+Install
+-------
 
-TODO
+::
+
+    $ pip install hat-doit
 
 
 License
