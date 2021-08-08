@@ -367,7 +367,7 @@ setup(
         'bdist_wheel': {{
             'python_tag': python_tag,
             'py_limited_api': python_tag,
-            'plat_name': 'any'
+            'plat_name': plat_name
         }}
     }},
     entry_points={{
