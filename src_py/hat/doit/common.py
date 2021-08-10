@@ -15,7 +15,7 @@ import packaging.requirements
 import packaging.version
 
 
-now = datetime.datetime.now()
+now: datetime.datetime = datetime.datetime.now()
 
 
 def init(python_paths: typing.List[os.PathLike] = [],
@@ -211,6 +211,16 @@ def latex_build(src: Path, dest: Path):
         subprocess.run(['xelatex', '-interaction=batchmode',
                         f'-output-directory={dest.resolve()}', i.name],
                        cwd=src, stdout=subprocess.DEVNULL, check=True)
+
+
+def pdoc_build(module: str, dest: Path):
+    mkdir_p(dest)
+    subprocess.run([sys.executable, '-m', 'pdoc',
+                    '--html', '--skip-errors', '-f',
+                    '-o', str(dest), module],
+                   stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL,
+                   check=True)
 
 
 if sys.platform == 'win32':

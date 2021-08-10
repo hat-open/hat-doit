@@ -21,6 +21,14 @@ For more information see:
     functionality and API are unstable.
 
 
+About
+-----
+
+Hat open projects uses `pydoit <https://pydoit.org/>`_ as build automation
+tool. This repository provides utility functions commonly used in
+definition of doit tasks.
+
+
 Install
 -------
 
