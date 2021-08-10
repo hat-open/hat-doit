@@ -3,6 +3,7 @@ import datetime
 import enum
 import functools
 import itertools
+import json
 import multiprocessing
 import os
 import platform
@@ -187,6 +188,41 @@ def wheel_build(src_dir: Path,
         cp_r(license_path, dst_dir / 'LICENSE')
 
     subprocess.run([sys.executable, 'setup.py', '-q', 'bdist_wheel'],
+                   cwd=str(dst_dir),
+                   check=True)
+
+
+def npm_build(src_dir: Path,
+              dst_dir: Path,
+              name: str,
+              description: str,
+              license: License,
+              readme_path: Path = Path('README.rst'),
+              version_path: Path = Path('VERSION'),
+              main: str = 'index.js',
+              homepage: typing.Optional[str] = None,
+              repository: typing.Optional[str] = None):
+    rm_rf(dst_dir)
+    cp_r(src_dir, dst_dir)
+
+    dst_readme_path = dst_dir / readme_path.with_suffix('.md').name
+    subprocess.run(['pandoc', str(readme_path), '-o', str(dst_readme_path)],
+                   check=True)
+
+    conf = {'name': name,
+            'description': description,
+            'license': license.value,
+            'version': get_version(version_type=VersionType.SEMVER,
+                                   version_path=version_path),
+            'main': main}
+    if homepage:
+        conf['homepage'] = homepage
+    if repository:
+        conf['repository'] = repository
+
+    (dst_dir / 'package.json').write_text(json.dumps(conf, indent=4))
+    subprocess.run(['npm', 'pack', '--silent'],
+                   stdout=subprocess.DEVNULL,
                    cwd=str(dst_dir),
                    check=True)
 
