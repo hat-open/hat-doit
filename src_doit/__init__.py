@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from hat.doit import common
+from hat.doit.py import build_wheel
 
 
 __all__ = ['task_clean_all',
@@ -20,7 +21,7 @@ def task_build():
     """Build"""
 
     def build():
-        common.wheel_build(
+        build_wheel(
             src_dir=src_py_dir,
             dst_dir=build_dir,
             src_paths=list(common.path_rglob(src_py_dir,
