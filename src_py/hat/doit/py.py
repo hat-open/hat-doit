@@ -4,7 +4,7 @@ import subprocess
 import sys
 import typing
 
-import packaging.requirements
+from packaging.requirements import Requirement
 
 from . import common
 
@@ -46,7 +46,7 @@ def build_wheel(src_dir: Path,
         license_classifier=repr(_get_wheel_license_classifier(license)),
         packages=repr(packages),
         requirements=repr([str(i)
-                           for i in _read_pip_requirements(requirements_path)]
+                           for i in read_pip_requirements(requirements_path)]
                           if requirements_path else []),
         python_tag=repr(python_tag),
         plat_name=repr(_get_wheel_plat_name(platform_specific)),
@@ -73,14 +73,14 @@ def run_flake8(path: Path):
                    check=True)
 
 
-def _read_pip_requirements(path):
+def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
     # TODO: implement full format
     #       https://pip.pypa.io/en/stable/cli/pip_install/
     for i in Path(path).read_text().split('\n'):
         i = i.strip()
         if not i or i.startswith('#'):
             continue
-        yield packaging.requirements.Requirement(i)
+        yield Requirement(i)
 
 
 def _get_wheel_license_classifier(license):
@@ -90,6 +90,9 @@ def _get_wheel_license_classifier(license):
     if license == common.License.GPL3:
         return ('License :: OSI Approved :: '
                 'GNU General Public License v3 (GPLv3)')
+
+    if license == common.License.PROPRIETARY:
+        return 'License :: Other/Proprietary License'
 
     raise ValueError('unsupported license')
 

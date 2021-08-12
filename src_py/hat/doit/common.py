@@ -25,6 +25,7 @@ class VersionType(enum.Enum):
 class License(enum.Enum):
     APACHE2 = 'Apache-2.0'
     GPL3 = 'GPLv3'
+    PROPRIETARY = 'PROPRIETARY'
 
 
 def init(python_paths: typing.List[os.PathLike] = [],
