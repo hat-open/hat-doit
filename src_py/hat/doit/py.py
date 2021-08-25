@@ -40,7 +40,7 @@ def build_wheel(src_dir: Path,
         version=repr(common.get_version(version_type=common.VersionType.PIP,
                                         version_path=version_path)),
         description=repr(description),
-        readme=repr(readme_path.read_text().strip()),
+        readme=repr(readme_path.read_text('utf-8').strip()),
         url=repr(url),
         license=repr(license.value),
         license_classifier=repr(_get_wheel_license_classifier(license)),
@@ -51,7 +51,7 @@ def build_wheel(src_dir: Path,
         python_tag=repr(python_tag),
         plat_name=repr(_get_wheel_plat_name(platform_specific)),
         console_scripts=repr(console_scripts),
-        gui_scripts=repr(gui_scripts)))
+        gui_scripts=repr(gui_scripts)), encoding='utf-8')
 
     if license_path:
         common.cp_r(license_path, dst_dir / 'LICENSE')
@@ -76,7 +76,7 @@ def run_flake8(path: Path):
 def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
     # TODO: implement full format
     #       https://pip.pypa.io/en/stable/cli/pip_install/
-    for i in Path(path).read_text().split('\n'):
+    for i in Path(path).read_text('utf-8').split('\n'):
         i = i.strip()
         if not i or i.startswith('#'):
             continue

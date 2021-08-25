@@ -63,7 +63,7 @@ def build_jsdoc(src: Path,
             "templates": {
                 "cleverLinks": True
             }
-        }))
+        }), encoding='utf-8')
         subprocess.run([str(node_modules_dir / '.bin/jsdoc'),
                         '-c', str(conf_path)],
                        check=True)

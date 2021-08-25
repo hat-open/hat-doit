@@ -93,7 +93,7 @@ def path_rglob(path: Path,
 def get_version(version_type: VersionType = VersionType.SEMVER,
                 version_path: Path = Path('VERSION')
                 ) -> str:
-    version = version_path.read_text().strip()
+    version = version_path.read_text('utf-8').strip()
 
     if version.endswith('dev'):
         version += now.strftime("%Y%m%d")

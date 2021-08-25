@@ -38,7 +38,8 @@ def build_npm(src_dir: Path,
     if dependencies:
         conf['dependencies'] = dependencies
 
-    (dst_dir / 'package.json').write_text(json.dumps(conf, indent=4))
+    (dst_dir / 'package.json').write_text(json.dumps(conf, indent=4),
+                                          encoding='utf-8')
     subprocess.run(['npm', 'pack', '--silent'],
                    stdout=subprocess.DEVNULL,
                    cwd=str(dst_dir),
