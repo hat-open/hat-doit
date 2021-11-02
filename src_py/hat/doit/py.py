@@ -36,7 +36,7 @@ def build_wheel(src_dir: Path,
         src_paths = [src_dir]
     src_paths = itertools.chain.from_iterable(
         (common.path_rglob(src_path, blacklist={'__pycache__'})
-         if src_path.is_dir() else src_path)
+         if src_path.is_dir() else [src_path])
         for src_path in src_paths)
 
     with open(dst_dir / 'MANIFEST.in', 'w', encoding='utf-8') as f:
