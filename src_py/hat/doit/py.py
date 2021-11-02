@@ -1,4 +1,5 @@
 from pathlib import Path
+import itertools
 import platform
 import subprocess
 import sys
@@ -9,24 +10,34 @@ from packaging.requirements import Requirement
 from . import common
 
 
+default_python_tag = 'cp38.cp39'
+
+
 def build_wheel(src_dir: Path,
                 dst_dir: Path,
-                src_paths: typing.List[Path],
                 name: str,
                 description: str,
                 url: str,
                 license: common.License,
                 packages: typing.List[str],
+                src_paths: typing.Optional[typing.Iterable[Path]] = None,
                 version_path: Path = Path('VERSION'),
                 readme_path: Path = Path('README.rst'),
                 license_path: typing.Optional[Path] = Path('LICENSE'),
                 requirements_path: typing.Optional[Path] = Path('requirements.pip.runtime.txt'),  # NOQA
-                python_tag: str = 'cp38.cp39',
+                python_tag: str = default_python_tag,
                 platform_specific: bool = False,
                 console_scripts=[],
                 gui_scripts=[]):
     common.rm_rf(dst_dir)
     common.mkdir_p(dst_dir)
+
+    if src_paths is None:
+        src_paths = [src_dir]
+    src_paths = itertools.chain.from_iterable(
+        (common.path_rglob(src_path, blacklist={'__pycache__'})
+         if src_path.is_dir() else src_path)
+        for src_path in src_paths)
 
     with open(dst_dir / 'MANIFEST.in', 'w', encoding='utf-8') as f:
         for src_path in src_paths:
