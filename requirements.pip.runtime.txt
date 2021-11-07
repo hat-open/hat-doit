@@ -1,2 +1,1 @@
-doit >= 0.33.1
-packaging >= 21.0
+packaging >= 21.2

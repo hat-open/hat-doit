@@ -67,7 +67,9 @@ def build_wheel(src_dir: Path,
     if license_path:
         common.cp_r(license_path, dst_dir / 'LICENSE')
 
-    subprocess.run([sys.executable, 'setup.py', '-q', 'bdist_wheel'],
+    subprocess.run([sys.executable, '-m', 'build', '--wheel',
+                    '--no-isolation'],
+                   stdout=subprocess.DEVNULL,
                    cwd=str(dst_dir),
                    check=True)
 
@@ -149,7 +151,7 @@ setup(
     long_description=readme,
     long_description_content_type='text/x-rst',
     url=url,
-    license='Apache-2.0',
+    license=license,
     classifiers=[
         'Programming Language :: Python :: 3',
         license_classifier],

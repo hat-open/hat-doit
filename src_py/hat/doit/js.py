@@ -16,13 +16,17 @@ def build_npm(src_dir: Path,
               main: str = 'index.js',
               homepage: typing.Optional[str] = None,
               repository: typing.Optional[str] = None,
-              dependencies: typing.Dict[str, str] = {}):
+              dependencies_path: typing.Optional[Path] = Path('package.json')):
     common.rm_rf(dst_dir)
     common.cp_r(src_dir, dst_dir)
 
     dst_readme_path = dst_dir / readme_path.with_suffix('.md').name
     subprocess.run(['pandoc', str(readme_path), '-o', str(dst_readme_path)],
                    check=True)
+
+    dependencies_package = (json.loads(dependencies_path.read_text())
+                            if dependencies_path else {})
+    dependencies = dependencies_package.get('dependencies')
 
     conf = {
         'name': name,
