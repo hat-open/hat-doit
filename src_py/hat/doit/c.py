@@ -31,7 +31,7 @@ class CBuild:
                  cpp_flags: typing.List[str] = [],
                  cc_flags: typing.List[str] = [],
                  ld_flags: typing.List[str] = [],
-                 libs: typing.List[str] = []):
+                 task_dep: typing.List[str] = []):
         self._src_paths = src_paths
         self._src_dir = src_dir
         self._build_dir = build_dir
@@ -41,6 +41,7 @@ class CBuild:
         self._cpp_flags = cpp_flags
         self._cc_flags = cc_flags
         self._ld_flags = ld_flags
+        self._task_dep = task_dep
 
     def get_task_lib(self, lib_path: Path) -> typing.Dict:
         obj_paths = [self._get_obj_path(src_path)
@@ -51,6 +52,7 @@ class CBuild:
                              '-o', str(lib_path), shared_flag,
                              *self._ld_flags]],
                 'file_dep': obj_paths,
+                'task_dep': self._task_dep,
                 'targets': [lib_path]}
 
     def get_task_objs(self) -> typing.Dict:
@@ -63,6 +65,7 @@ class CBuild:
                                [cc, *self._cpp_flags, *self._cc_flags, '-c',
                                 '-o', str(obj_path), str(src_path)]],
                    'file_dep': [src_path, dep_path, *header_paths],
+                   'task_dep': self._task_dep,
                    'targets': [obj_path]}
 
     def get_task_deps(self) -> typing.Dict:
@@ -73,6 +76,7 @@ class CBuild:
                                [cpp, *self._cpp_flags, '-MM',
                                 '-o', str(dep_path), str(src_path)]],
                    'file_dep': [src_path],
+                   'task_dep': self._task_dep,
                    'targets': [dep_path]}
 
     def _get_dep_path(self, src_path):
