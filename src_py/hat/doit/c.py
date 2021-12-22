@@ -26,8 +26,8 @@ class CBuild:
 
     def __init__(self,
                  src_paths: typing.List[Path],
-                 src_dir: Path,
                  build_dir: Path, *,
+                 src_dir: Path = Path('.'),
                  cpp: str = cpp,
                  cc: str = cc,
                  ld: str = ld,
@@ -36,8 +36,8 @@ class CBuild:
                  ld_flags: typing.List[str] = [],
                  task_dep: typing.List[str] = []):
         self._src_paths = src_paths
-        self._src_dir = src_dir
         self._build_dir = build_dir
+        self._src_dir = src_dir
         self._cpp = cpp
         self._cc = cc
         self._ld = ld
