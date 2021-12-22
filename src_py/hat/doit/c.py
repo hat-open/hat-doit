@@ -8,10 +8,13 @@ from . import common
 
 
 if sys.platform == 'win32':
+    exe_suffix = '.exe'
     lib_suffix = '.dll'
 elif sys.platform == 'darwin':
+    exe_suffix = ''
     lib_suffix = '.dylib'
 else:
+    exe_suffix = ''
     lib_suffix = '.so'
 
 cpp = os.environ.get('CPP', 'cpp')
@@ -43,12 +46,25 @@ class CBuild:
         self._ld_flags = ld_flags
         self._task_dep = task_dep
 
+    def get_task_exe(self, exe_path: Path) -> typing.Dict:
+        obj_paths = [self._get_obj_path(src_path)
+                     for src_path in self._src_paths]
+        return {'actions': [(common.mkdir_p, [exe_path.parent]),
+                            [self._ld,
+                             *(str(obj_path) for obj_path in obj_paths),
+                             '-o', str(exe_path),
+                             *self._ld_flags]],
+                'file_dep': obj_paths,
+                'task_dep': self._task_dep,
+                'targets': [exe_path]}
+
     def get_task_lib(self, lib_path: Path) -> typing.Dict:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
         shared_flag = '-mdll' if sys.platform == 'win32' else '-shared'
         return {'actions': [(common.mkdir_p, [lib_path.parent]),
-                            [ld, *[str(obj_path) for obj_path in obj_paths],
+                            [self._ld,
+                             *(str(obj_path) for obj_path in obj_paths),
                              '-o', str(lib_path), shared_flag,
                              *self._ld_flags]],
                 'file_dep': obj_paths,
