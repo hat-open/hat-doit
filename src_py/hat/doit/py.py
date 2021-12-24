@@ -10,7 +10,7 @@ from packaging.requirements import Requirement
 from . import common
 
 
-default_python_tag = 'cp38.cp39'
+default_python_tag = 'cp38.cp39.cp310'
 
 
 def build_wheel(src_dir: Path,
