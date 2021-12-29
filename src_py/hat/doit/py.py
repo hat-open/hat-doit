@@ -1,6 +1,5 @@
 from pathlib import Path
 import itertools
-import platform
 import subprocess
 import sys
 import typing
@@ -8,9 +7,6 @@ import typing
 from packaging.requirements import Requirement
 
 from . import common
-
-
-default_python_tag = 'cp38.cp39.cp310'
 
 
 def build_wheel(src_dir: Path,
@@ -25,10 +21,10 @@ def build_wheel(src_dir: Path,
                 readme_path: Path = Path('README.rst'),
                 license_path: typing.Optional[Path] = Path('LICENSE'),
                 requirements_path: typing.Optional[Path] = Path('requirements.pip.runtime.txt'),  # NOQA
-                python_tag: str = default_python_tag,
-                platform_specific: bool = False,
-                console_scripts=[],
-                gui_scripts=[]):
+                py_versions: typing.Iterable[common.PyVersion] = common.PyVersion,  # NOQA
+                platform: typing.Optional[common.Platform] = None,
+                console_scripts: typing.List[str] = [],
+                gui_scripts: typing.List[str] = []):
     common.rm_rf(dst_dir)
     common.mkdir_p(dst_dir)
 
@@ -38,6 +34,9 @@ def build_wheel(src_dir: Path,
         (common.path_rglob(src_path, blacklist={'__pycache__'})
          if src_path.is_dir() else [src_path])
         for src_path in src_paths)
+
+    python_tag = '.'.join(''.join(str(i) for i in py_version.value)
+                          for py_version in py_versions)
 
     with open(dst_dir / 'MANIFEST.in', 'w', encoding='utf-8') as f:
         for src_path in src_paths:
@@ -60,7 +59,7 @@ def build_wheel(src_dir: Path,
                            for i in read_pip_requirements(requirements_path)]
                           if requirements_path else []),
         python_tag=repr(python_tag),
-        plat_name=repr(_get_wheel_plat_name(platform_specific)),
+        plat_name=repr(_get_wheel_plat_name(platform)),
         console_scripts=repr(console_scripts),
         gui_scripts=repr(gui_scripts)), encoding='utf-8')
 
@@ -110,19 +109,18 @@ def _get_wheel_license_classifier(license):
     raise ValueError('unsupported license')
 
 
-def _get_wheel_plat_name(platform_specific):
-    if not platform_specific:
+def _get_wheel_plat_name(platform):
+    if not platform:
         return 'any'
 
-    arch, _ = platform.architecture()
-    if sys.platform == 'win32' and arch == '32bit':
-        return 'win32'
-    if sys.platform == 'win32' and arch == '64bit':
+    if platform == common.Platform.WINDOWS:
         return 'win_amd64'
-    if sys.platform == 'linux' and arch == '64bit':
-        return 'manylinux1_x86_64'
-    if sys.platform == 'darwin' and arch == '64bit':
+
+    if platform == common.Platform.DARWIN:
         return 'macosx_10_13_x86_64'
+
+    if platform == common.Platform.LINUX:
+        return 'manylinux1_x86_64'
 
     raise NotImplementedError()
 

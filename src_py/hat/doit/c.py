@@ -1,71 +1,88 @@
 from pathlib import Path
-import enum
-import itertools
 import os
-import sys
 import typing
 
 from . import common
 
 
-class Platform(enum.Enum):
-    WINDOWS = 'win32'
-    DARWIN = 'darwin'
-    LINUX = 'linux'
-
-
-def get_exe_suffix(platform: Platform) -> str:
-    if platform == Platform.WINDOWS:
+def get_exe_suffix(platform: common.Platform) -> str:
+    if platform == common.Platform.WINDOWS:
         return '.exe'
 
-    if platform == Platform.DARWIN:
+    if platform == common.Platform.DARWIN:
         return ''
 
-    if platform == Platform.LINUX:
+    if platform == common.Platform.LINUX:
         return ''
 
     raise ValueError('unsupported platform')
 
 
-def get_lib_suffix(platform: Platform) -> str:
-    if platform == Platform.WINDOWS:
+def get_lib_suffix(platform: common.Platform) -> str:
+    if platform == common.Platform.WINDOWS:
         return '.dll'
 
-    if platform == Platform.DARWIN:
+    if platform == common.Platform.DARWIN:
         return '.dylib'
 
-    if platform == Platform.LINUX:
+    if platform == common.Platform.LINUX:
         return '.so'
 
     raise ValueError('unsupported platform')
 
 
-local_platform: Platform = Platform(sys.platform)
-local_exe_suffix: str = get_exe_suffix(local_platform)
-local_lib_suffix: str = get_lib_suffix(local_platform)
+def get_ext_suffix(platform: common.Platform,
+                   py_version: common.PyVersion
+                   ) -> str:
+    _, major, minor = py_version.value
+
+    if platform == common.Platform.LINUX:
+        return f'.cpython-{major}{minor}-x86_64-linux-gnu.so'
+
+    elif platform == common.Platform.DARWIN:
+        return f'.cpython-{major}{minor}-darwin.so'
+
+    elif platform == common.Platform.WINDOWS:
+        return f'.cp{major}{minor}-win_amd64.pyd'
+
+    raise ValueError('unsupported platform')
 
 
-def get_cpp(platform: Platform) -> str:
-    if platform == local_platform:
+local_exe_suffix: str = get_exe_suffix(common.local_platform)
+target_exe_suffix: str = get_exe_suffix(common.target_platform)
+
+local_lib_suffix: str = get_lib_suffix(common.local_platform)
+target_lib_suffix: str = get_lib_suffix(common.target_platform)
+
+local_ext_suffix: str = get_ext_suffix(common.local_platform,
+                                       common.local_py_version)
+target_ext_suffix: str = get_ext_suffix(common.target_platform,
+                                        common.target_py_version)
+
+
+def get_cpp(platform: common.Platform) -> str:
+    if platform == common.local_platform:
         return os.environ.get('CPP', 'cpp')
 
-    if (local_platform, platform) == (Platform.LINUX, Platform.WINDOWS):
+    if (common.local_platform, platform) == (common.Platform.LINUX,
+                                             common.Platform.WINDOWS):
         return 'x86_64-w64-mingw32-cpp'
 
     raise ValueError('unsupported platform')
 
 
-def get_cc(platform: Platform) -> str:
-    if platform == local_platform:
+def get_cc(platform: common.Platform) -> str:
+    if platform == common.local_platform:
         return os.environ.get('CC', 'cc')
 
-    if (local_platform, platform) == (Platform.LINUX, Platform.WINDOWS):
+    if (common.local_platform, platform) == (common.Platform.LINUX,
+                                             common.Platform.WINDOWS):
         return 'x86_64-w64-mingw32-cc'
 
     raise ValueError('unsupported platform')
 
 
-def get_ld(platform: Platform) -> str:
+def get_ld(platform: common.Platform) -> str:
     return get_cc(platform)
 
 
@@ -75,7 +92,7 @@ class CBuild:
                  src_paths: typing.List[Path],
                  build_dir: Path, *,
                  src_dir: Path = Path('.'),
-                 platform: Platform = local_platform,
+                 platform: common.Platform = common.target_platform,
                  cpp_flags: typing.List[str] = [],
                  cc_flags: typing.List[str] = [],
                  ld_flags: typing.List[str] = [],
@@ -105,7 +122,7 @@ class CBuild:
     def get_task_lib(self, lib_path: Path) -> typing.Dict:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
-        shared_flag = ('-mdll' if self._platform == Platform.WINDOWS
+        shared_flag = ('-mdll' if self._platform == common.Platform.WINDOWS
                        else '-shared')
         yield {'name': str(lib_path),
                'actions': [(common.mkdir_p, [lib_path.parent]),
@@ -121,7 +138,7 @@ class CBuild:
         for src_path in self._src_paths:
             dep_path = self._get_dep_path(src_path)
             obj_path = self._get_obj_path(src_path)
-            header_paths = self._parse_dep(dep_path)
+            header_paths = _parse_dep(dep_path)
             yield {'name': str(obj_path),
                    'actions': [(common.mkdir_p, [obj_path.parent]),
                                [get_cc(self._platform),
@@ -151,14 +168,18 @@ class CBuild:
         return (self._build_dir /
                 src_path.relative_to(self._src_dir)).with_suffix('.o')
 
-    def _parse_dep(self, path):
-        if not path.exists():
-            return []
-        with open(path, 'r') as f:
-            content = f.readlines()
-        if not content:
-            return []
-        content[0] = content[0][content[0].find(':')+1:]
-        return list(itertools.chain.from_iterable(
-            (Path(path) for path in i.replace(' \\\n', '').strip().split(' '))
-            for i in content))
+
+# TODO rewrite
+def _parse_dep(path):
+    if not path.exists():
+        return
+
+    content = path.read_text()
+    if content:
+        return
+
+    content = content.split('\n')
+    content[0] = content[0][content[0].find(':')+1:]
+    for i in content:
+        for path in i.replace(' \\\n', '').strip().split(' '):
+            yield Path(path)

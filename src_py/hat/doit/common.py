@@ -11,10 +11,20 @@ import sys
 import typing
 
 import packaging.requirements
+import packaging.tags
 import packaging.version
 
 
-now: datetime.datetime = datetime.datetime.now()
+class Platform(enum.Enum):
+    WINDOWS = 'win32'
+    DARWIN = 'darwin'
+    LINUX = 'linux'
+
+
+class PyVersion(enum.Enum):
+    CP38 = ('cp', 3, 8)
+    CP39 = ('cp', 3, 9)
+    CP310 = ('cp', 3, 10)
 
 
 class VersionType(enum.Enum):
@@ -26,6 +36,21 @@ class License(enum.Enum):
     APACHE2 = 'Apache-2.0'
     GPL3 = 'GPLv3'
     PROPRIETARY = 'PROPRIETARY'
+
+
+now: datetime.datetime = datetime.datetime.now()
+
+local_platform: Platform = Platform(sys.platform)
+target_platform: Platform = (Platform[os.environ['TARGET_PLATFORM'].upper()]
+                             if 'TARGET_PLATFORM' in os.environ
+                             else local_platform)
+
+local_py_version: PyVersion = PyVersion((packaging.tags.interpreter_name(),
+                                         sys.version_info.major,
+                                         sys.version_info.minor))
+target_py_version: PyVersion = (
+    PyVersion[os.environ['TARGET_PY_VERSION'].upper()]
+    if 'TARGET_PY_VERSION' in os.environ else local_py_version)
 
 
 def init(python_paths: typing.List[os.PathLike] = [],
@@ -109,11 +134,11 @@ def get_version(version_type: VersionType = VersionType.SEMVER,
 
 class StaticWebServer:
 
-    def __init__(self, dir: os.PathLike, port: int):
+    def __init__(self, static_dir: os.PathLike, port: int):
         self._p = subprocess.Popen([sys.executable,
                                     '-m', 'http.server',
                                     '-b', '127.0.0.1',
-                                    '-d', str(dir),
+                                    '-d', str(static_dir),
                                     str(port)],
                                    stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL)
