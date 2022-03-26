@@ -33,7 +33,7 @@ def build_latex(src: Path, dest: Path):
 def build_pdoc(module: str, dest: Path):
     common.mkdir_p(dest)
     subprocess.run([sys.executable, '-m', 'pdoc',
-                    '--html', '--skip-errors', '-f',
+                    '-d', 'google',
                     '-o', str(dest), module],
                    stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL,
