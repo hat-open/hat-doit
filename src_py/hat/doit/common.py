@@ -5,6 +5,7 @@ import functools
 import itertools
 import multiprocessing
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -16,9 +17,10 @@ import packaging.version
 
 
 class Platform(enum.Enum):
-    WINDOWS = 'win32'
-    DARWIN = 'darwin'
-    LINUX = 'linux'
+    WINDOWS_AMD64 = ('win32', 'amd64')
+    DARWIN_X86_64 = ('darwin', 'x86_64')
+    LINUX_X86_64 = ('linux', 'x86_64')
+    LINUX_AARCH64 = ('linux', 'aarch64')
 
 
 class PyVersion(enum.Enum):
@@ -40,7 +42,7 @@ class License(enum.Enum):
 
 now: datetime.datetime = datetime.datetime.now()
 
-local_platform: Platform = Platform(sys.platform)
+local_platform: Platform = Platform((sys.platform, platform.machine().lower()))
 target_platform: Platform = (Platform[os.environ['TARGET_PLATFORM'].upper()]
                              if 'TARGET_PLATFORM' in os.environ
                              else local_platform)

@@ -1,31 +1,32 @@
 from pathlib import Path
 import os
+import sysconfig
 import typing
 
 from . import common
 
 
 def get_exe_suffix(platform: common.Platform) -> str:
-    if platform == common.Platform.WINDOWS:
+    if platform == common.Platform.WINDOWS_AMD64:
         return '.exe'
 
-    if platform == common.Platform.DARWIN:
-        return ''
-
-    if platform == common.Platform.LINUX:
+    if platform in (common.Platform.DARWIN_X86_64,
+                    common.Platform.LINUX_X86_64,
+                    common.Platform.LINUX_AARCH64):
         return ''
 
     raise ValueError('unsupported platform')
 
 
 def get_lib_suffix(platform: common.Platform) -> str:
-    if platform == common.Platform.WINDOWS:
+    if platform == common.Platform.WINDOWS_AMD64:
         return '.dll'
 
-    if platform == common.Platform.DARWIN:
+    if platform == common.Platform.DARWIN_X86_64:
         return '.dylib'
 
-    if platform == common.Platform.LINUX:
+    if platform in (common.Platform.LINUX_X86_64,
+                    common.Platform.LINUX_AARCH64):
         return '.so'
 
     raise ValueError('unsupported platform')
@@ -36,14 +37,17 @@ def get_ext_suffix(platform: common.Platform,
                    ) -> str:
     _, major, minor = py_version.value
 
-    if platform == common.Platform.LINUX:
-        return f'.cpython-{major}{minor}-x86_64-linux-gnu.so'
+    if platform == common.Platform.WINDOWS_AMD64:
+        return f'.cp{major}{minor}-win_amd64.pyd'
 
-    elif platform == common.Platform.DARWIN:
+    elif platform == common.Platform.DARWIN_X86_64:
         return f'.cpython-{major}{minor}-darwin.so'
 
-    elif platform == common.Platform.WINDOWS:
-        return f'.cp{major}{minor}-win_amd64.pyd'
+    elif platform == common.Platform.LINUX_X86_64:
+        return f'.cpython-{major}{minor}-x86_64-linux-gnu.so'
+
+    elif platform == common.Platform.LINUX_AARCH64:
+        return f'.cpython-{major}{minor}-aarch64-linux-gnu.so'
 
     raise ValueError('unsupported platform')
 
@@ -64,9 +68,13 @@ def get_cpp(platform: common.Platform) -> str:
     if platform == common.local_platform:
         return os.environ.get('CPP', 'cpp')
 
-    if (common.local_platform, platform) == (common.Platform.LINUX,
-                                             common.Platform.WINDOWS):
+    if (common.local_platform, platform) == (common.Platform.LINUX_X86_64,
+                                             common.Platform.WINDOWS_AMD64):
         return 'x86_64-w64-mingw32-cpp'
+
+    if (common.local_platform, platform) == (common.Platform.LINUX_X86_64,
+                                             common.Platform.LINUX_AARCH64):
+        return 'aarch64-linux-gnu-cpp'
 
     raise ValueError('unsupported platform')
 
@@ -75,15 +83,66 @@ def get_cc(platform: common.Platform) -> str:
     if platform == common.local_platform:
         return os.environ.get('CC', 'cc')
 
-    if (common.local_platform, platform) == (common.Platform.LINUX,
-                                             common.Platform.WINDOWS):
+    if (common.local_platform, platform) == (common.Platform.LINUX_X86_64,
+                                             common.Platform.WINDOWS_AMD64):
         return 'x86_64-w64-mingw32-cc'
+
+    if (common.local_platform, platform) == (common.Platform.LINUX_X86_64,
+                                             common.Platform.LINUX_AARCH64):
+        return 'aarch64-linux-gnu-gcc'
 
     raise ValueError('unsupported platform')
 
 
 def get_ld(platform: common.Platform) -> str:
     return get_cc(platform)
+
+
+def get_py_cpp_flags() -> typing.Iterable[str]:
+    _, major, minor = common.target_py_version.value
+
+    if common.target_platform == common.local_platform:
+        if common.target_py_version == common.local_py_version:
+            include_path = sysconfig.get_path('include')
+            if include_path:
+                yield f'-I{include_path}'
+
+        elif common.local_platform == common.Platform.LINUX_X86_64:
+            yield f'-I/usr/include/python{major}.{minor}'
+
+        else:
+            raise ValueError('unsupported version')
+
+    elif (common.local_platform, common.target_platform) == (
+            common.Platform.LINUX_X86_64, common.Platform.WINDOWS_AMD64):
+        yield f'-I/usr/x86_64-w64-mingw32/include/python{major}{minor}'
+
+    elif (common.local_platform, common.target_platform) == (
+            common.Platform.LINUX_X86_64, common.Platform.LINUX_AARCH64):
+        yield f'-I/usr/include/python{major}.{minor}'
+
+    else:
+        raise ValueError('unsupported platform')
+
+
+def get_py_ld_flags() -> typing.Iterable[str]:
+    _, major, minor = common.target_py_version.value
+
+    if common.target_platform == common.local_platform:
+        if common.local_platform == common.Platform.DARWIN_X86_64:
+            stdlib_path = (Path(sysconfig.get_path('stdlib')) /
+                           f'config-{major}.{minor}-darwin')
+            yield f"-L{stdlib_path}"
+
+        elif common.local_platform == common.Platform.WINDOWS_AMD64:
+            data_path = sysconfig.get_path('data')
+            yield f"-L{data_path}"
+
+    if common.target_platform == common.Platform.WINDOWS_AMD64:
+        yield f"-lpython{major}{minor}"
+
+    elif common.target_platform == common.Platform.DARWIN_X86_64:
+        yield f"-lpython{major}.{minor}"
 
 
 class CBuild:
@@ -122,8 +181,9 @@ class CBuild:
     def get_task_lib(self, lib_path: Path) -> typing.Dict:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
-        shared_flag = ('-mdll' if self._platform == common.Platform.WINDOWS
-                       else '-shared')
+        shared_flag = (
+            '-mdll' if self._platform == common.Platform.WINDOWS_AMD64
+            else '-shared')
         yield {'name': str(lib_path),
                'actions': [(common.mkdir_p, [lib_path.parent]),
                            [get_ld(self._platform),

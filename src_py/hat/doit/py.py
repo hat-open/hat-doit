@@ -113,14 +113,17 @@ def _get_wheel_plat_name(platform):
     if not platform:
         return 'any'
 
-    if platform == common.Platform.WINDOWS:
+    if platform == common.Platform.WINDOWS_AMD64:
         return 'win_amd64'
 
-    if platform == common.Platform.DARWIN:
+    if platform == common.Platform.DARWIN_X86_64:
         return 'macosx_10_13_x86_64'
 
-    if platform == common.Platform.LINUX:
+    if platform == common.Platform.LINUX_X86_64:
         return 'manylinux1_x86_64'
+
+    if platform == common.Platform.LINUX_AARCH64:
+        return 'manylinux2014_aarch64'
 
     raise NotImplementedError()
 
