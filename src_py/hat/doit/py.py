@@ -5,6 +5,7 @@ import sys
 import typing
 
 from packaging.requirements import Requirement
+import setuptools
 
 from . import common
 
@@ -15,7 +16,7 @@ def build_wheel(src_dir: Path,
                 description: str,
                 url: str,
                 license: common.License,
-                packages: typing.List[str],
+                packages: typing.List[str] = None,
                 src_paths: typing.Optional[typing.Iterable[Path]] = None,
                 version_path: Path = Path('VERSION'),
                 readme_path: Path = Path('README.rst'),
@@ -25,9 +26,12 @@ def build_wheel(src_dir: Path,
                 platform: typing.Optional[common.Platform] = None,
                 console_scripts: typing.List[str] = [],
                 gui_scripts: typing.List[str] = [],
-                zip_safe: bool = False):
+                zip_safe: bool = True):
     common.rm_rf(dst_dir)
     common.mkdir_p(dst_dir)
+
+    if packages is None:
+        packages = setuptools.find_namespace_packages(src_dir)
 
     if src_paths is None:
         src_paths = [src_dir]
@@ -56,7 +60,7 @@ def build_wheel(src_dir: Path,
         license=repr(license.value),
         license_classifier=repr(_get_wheel_license_classifier(license)),
         packages=repr(packages),
-        zip_safe=zip_safe,
+        zip_safe=repr(zip_safe),
         requirements=repr([str(i)
                            for i in read_pip_requirements(requirements_path)]
                           if requirements_path else []),

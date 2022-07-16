@@ -27,7 +27,6 @@ def task_build():
             name='hat-doit',
             description='Hat build utility functions',
             url='https://github.com/hat-open/hat-doit',
-            license=common.License.APACHE2,
-            packages=['hat'])
+            license=common.License.APACHE2)
 
     return {'actions': [build]}

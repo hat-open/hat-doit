@@ -1,6 +1,1 @@
 -r requirements.pip.runtime.txt
-
-build >= 0.8.0
-doit >= 0.36.0
-setuptools >= 63.2.0
-wheel >= 0.37.1
