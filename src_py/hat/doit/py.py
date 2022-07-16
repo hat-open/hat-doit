@@ -23,10 +23,13 @@ def build_wheel(src_dir: Path,
                 license_path: typing.Optional[Path] = Path('LICENSE'),
                 requirements_path: typing.Optional[Path] = Path('requirements.pip.runtime.txt'),  # NOQA
                 py_versions: typing.Iterable[common.PyVersion] = common.PyVersion,  # NOQA
+                py_limited_api: typing.Optional[common.PyVersion] = None,
                 platform: typing.Optional[common.Platform] = None,
                 console_scripts: typing.List[str] = [],
                 gui_scripts: typing.List[str] = [],
-                zip_safe: bool = True):
+                zip_safe: bool = True,
+                has_ext_modules: bool = False,
+                has_c_libraries: bool = False):
     common.rm_rf(dst_dir)
     common.mkdir_p(dst_dir)
 
@@ -40,8 +43,10 @@ def build_wheel(src_dir: Path,
          if src_path.is_dir() else [src_path])
         for src_path in src_paths)
 
-    python_tag = '.'.join(''.join(str(i) for i in py_version.value)
-                          for py_version in py_versions)
+    is_pure = not (has_ext_modules or has_c_libraries)
+    python_tag = _get_python_tag(py_versions)
+    abi_tag = _get_abi_tag(is_pure, py_limited_api, py_versions)
+    platform_tag = _get_platform_tag(platform)
 
     with open(dst_dir / 'MANIFEST.in', 'w', encoding='utf-8') as f:
         for src_path in src_paths:
@@ -65,9 +70,12 @@ def build_wheel(src_dir: Path,
                            for i in read_pip_requirements(requirements_path)]
                           if requirements_path else []),
         python_tag=repr(python_tag),
-        plat_name=repr(_get_wheel_plat_name(platform)),
+        abi_tag=repr(abi_tag),
+        platform_tag=repr(platform_tag),
         console_scripts=repr(console_scripts),
-        gui_scripts=repr(gui_scripts)), encoding='utf-8')
+        gui_scripts=repr(gui_scripts),
+        has_ext_modules=repr(has_ext_modules),
+        has_c_libraries=repr(has_c_libraries)), encoding='utf-8')
 
     if license_path:
         common.cp_r(license_path, dst_dir / 'LICENSE')
@@ -101,6 +109,16 @@ def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
         yield Requirement(i)
 
 
+def get_py_versions(py_limited_api: typing.Optional[common.PyVersion]
+                    ) -> typing.List[common.PyVersion]:
+    if py_limited_api is None:
+        return [common.target_py_version]
+
+    return [version for version in common.PyVersion
+            if version.value[0] == py_limited_api.value[0] and
+            version.value >= py_limited_api.value]
+
+
 def _get_wheel_license_classifier(license):
     if license == common.License.APACHE2:
         return 'License :: OSI Approved :: Apache Software License'
@@ -115,7 +133,22 @@ def _get_wheel_license_classifier(license):
     raise ValueError('unsupported license')
 
 
-def _get_wheel_plat_name(platform):
+def _get_python_tag(py_versions):
+    return '.'.join(''.join(str(i) for i in py_version.value)
+                    for py_version in py_versions)
+
+
+def _get_abi_tag(is_pure, py_limited_api, py_versions):
+    if is_pure:
+        return 'none'
+
+    if py_limited_api:
+        return 'abi3'
+
+    return _get_python_tag(py_versions)
+
+
+def _get_platform_tag(platform):
     if not platform:
         return 'any'
 
@@ -135,7 +168,9 @@ def _get_wheel_plat_name(platform):
 
 
 _wheel_setup_py = r"""
-from setuptools import setup
+import setuptools
+import wheel.bdist_wheel
+
 
 name = {name}
 version = {version}
@@ -148,11 +183,29 @@ packages = {packages}
 zip_safe = {zip_safe}
 requirements = {requirements}
 python_tag = {python_tag}
-plat_name = {plat_name}
+abi_tag = {abi_tag}
+platform_tag = {platform_tag}
 console_scripts = {console_scripts}
 gui_scripts = {gui_scripts}
+has_ext_modules = {has_ext_modules}
+has_c_libraries = {has_c_libraries}
 
-setup(
+
+wheel_tag = python_tag, abi_tag, platform_tag
+wheel.bdist_wheel.bdist_wheel.get_tag = lambda self: wheel_tag
+
+
+class Distribution(setuptools.Distribution):
+
+    def has_ext_modules(self):
+        return has_ext_modules
+
+    def has_c_libraries(self):
+        return has_c_libraries
+
+
+setuptools.setup(
+    distclass=Distribution,
     name=name,
     version=version,
     description=description,
@@ -172,7 +225,7 @@ setup(
         'bdist_wheel': {{
             'python_tag': python_tag,
             'py_limited_api': python_tag,
-            'plat_name': plat_name
+            'plat_name': platform_tag
         }}
     }},
     entry_points={{

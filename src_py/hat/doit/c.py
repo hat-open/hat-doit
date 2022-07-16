@@ -33,20 +33,29 @@ def get_lib_suffix(platform: common.Platform) -> str:
 
 
 def get_ext_suffix(platform: common.Platform,
-                   py_version: common.PyVersion
+                   py_version: common.PyVersion,
+                   py_limited_api: typing.Optional[common.PyVersion]
                    ) -> str:
-    _, major, minor = py_version.value
+    _, major, minor = (py_limited_api or py_version).value
 
     if platform == common.Platform.WINDOWS_AMD64:
+        if py_limited_api is not None:
+            return f'.abi{major}.pyd'
         return f'.cp{major}{minor}-win_amd64.pyd'
 
     elif platform == common.Platform.DARWIN_X86_64:
+        if py_limited_api is not None:
+            return f'.abi{major}.so'
         return f'.cpython-{major}{minor}-darwin.so'
 
     elif platform == common.Platform.LINUX_X86_64:
+        if py_limited_api is not None:
+            return f'.abi{major}.so'
         return f'.cpython-{major}{minor}-x86_64-linux-gnu.so'
 
     elif platform == common.Platform.LINUX_AARCH64:
+        if py_limited_api is not None:
+            return f'.abi{major}.so'
         return f'.cpython-{major}{minor}-aarch64-linux-gnu.so'
 
     raise ValueError('unsupported platform')
@@ -58,10 +67,17 @@ target_exe_suffix: str = get_exe_suffix(common.target_platform)
 local_lib_suffix: str = get_lib_suffix(common.local_platform)
 target_lib_suffix: str = get_lib_suffix(common.target_platform)
 
-local_ext_suffix: str = get_ext_suffix(common.local_platform,
-                                       common.local_py_version)
-target_ext_suffix: str = get_ext_suffix(common.target_platform,
-                                        common.target_py_version)
+
+def get_local_ext_suffix(py_limited_api: typing.Optional[common.PyVersion]
+                         ) -> str:
+    return get_ext_suffix(common.local_platform, common.local_py_version,
+                          py_limited_api)
+
+
+def get_target_ext_suffix(py_limited_api: typing.Optional[common.PyVersion]
+                          ) -> str:
+    return get_ext_suffix(common.target_platform, common.target_py_version,
+                          py_limited_api)
 
 
 def get_cpp(platform: common.Platform) -> str:
@@ -98,8 +114,15 @@ def get_ld(platform: common.Platform) -> str:
     return get_cc(platform)
 
 
-def get_py_cpp_flags() -> typing.Iterable[str]:
+def get_py_cpp_flags(py_limited_api: bool
+                     ) -> typing.Iterable[str]:
     _, major, minor = common.target_py_version.value
+
+    yield '-DPY_SSIZE_T_CLEAN'
+
+    if py_limited_api:
+        _, limited_major, limited_minor = py_limited_api.value
+        yield f'-DPy_LIMITED_API=0x{limited_major:02X}{limited_minor:02X}0000'
 
     if common.target_platform == common.local_platform:
         if common.target_py_version == common.local_py_version:
@@ -125,7 +148,8 @@ def get_py_cpp_flags() -> typing.Iterable[str]:
         raise ValueError('unsupported platform')
 
 
-def get_py_ld_flags() -> typing.Iterable[str]:
+def get_py_ld_flags(py_limited_api: bool
+                    ) -> typing.Iterable[str]:
     _, major, minor = common.target_py_version.value
 
     if common.target_platform == common.local_platform:
@@ -139,10 +163,16 @@ def get_py_ld_flags() -> typing.Iterable[str]:
             yield f"-L{data_path}"
 
     if common.target_platform == common.Platform.WINDOWS_AMD64:
-        yield f"-lpython{major}{minor}"
+        if py_limited_api:
+            yield f"-lpython{major}"
+        else:
+            yield f"-lpython{major}{minor}"
 
     elif common.target_platform == common.Platform.DARWIN_X86_64:
-        yield f"-lpython{major}.{minor}"
+        if py_limited_api:
+            yield f"-lpython{major}"
+        else:
+            yield f"-lpython{major}.{minor}"
 
 
 class CBuild:
