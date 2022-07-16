@@ -24,7 +24,8 @@ def build_wheel(src_dir: Path,
                 py_versions: typing.Iterable[common.PyVersion] = common.PyVersion,  # NOQA
                 platform: typing.Optional[common.Platform] = None,
                 console_scripts: typing.List[str] = [],
-                gui_scripts: typing.List[str] = []):
+                gui_scripts: typing.List[str] = [],
+                zip_safe: bool = False):
     common.rm_rf(dst_dir)
     common.mkdir_p(dst_dir)
 
@@ -55,6 +56,7 @@ def build_wheel(src_dir: Path,
         license=repr(license.value),
         license_classifier=repr(_get_wheel_license_classifier(license)),
         packages=repr(packages),
+        zip_safe=zip_safe,
         requirements=repr([str(i)
                            for i in read_pip_requirements(requirements_path)]
                           if requirements_path else []),
@@ -139,6 +141,7 @@ url = {url}
 license = {license}
 license_classifier = {license_classifier}
 packages = {packages}
+zip_safe = {zip_safe}
 requirements = {requirements}
 python_tag = {python_tag}
 plat_name = {plat_name}
@@ -158,7 +161,7 @@ setup(
         license_classifier],
     packages=packages,
     include_package_data=True,
-    zip_safe=False,
+    zip_safe=zip_safe,
     install_requires=requirements,
     python_requires='>=3.8',
     options={{
