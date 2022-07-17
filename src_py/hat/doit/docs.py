@@ -1,9 +1,13 @@
 from pathlib import Path
 import enum
+import importlib.resources
 import json
 import subprocess
 import sys
 import tempfile
+import typing
+
+import sphinx.application
 
 from . import common
 
@@ -13,13 +17,48 @@ class SphinxOutputType(enum.Enum):
     LATEX = 'latex'
 
 
-def build_sphinx(out_type: SphinxOutputType,
-                 src: Path,
-                 dest: Path):
-    common.mkdir_p(dest)
-    subprocess.run([sys.executable, '-m', 'sphinx', '-q', '-b', out_type.value,
-                    str(src), str(dest)],
-                   check=True)
+def build_sphinx(src_dir: Path,
+                 dst_dir: Path,
+                 project: str,
+                 out_type: SphinxOutputType = SphinxOutputType.HTML,
+                 extensions: typing.Iterable[str] = [],
+                 version_path: Path = Path('VERSION'),
+                 copyright: str = '2020-2022, Hat Open AUTHORS',
+                 static_paths: typing.Iterable[Path] = [],
+                 conf: typing.Dict[str, typing.Any] = {}):
+    common.mkdir_p(dst_dir)
+    version = common.get_version(version_type=common.VersionType.PIP,
+                                 version_path=version_path)
+
+    # TODO: change 'hat.doit.sphinx' with imported module
+    with importlib.resources.path('hat.doit.sphinx', 'static') as static_path:
+        conf = {'extensions': ['sphinx.ext.todo',
+                               *extensions],
+                'version': version,
+                'project': project,
+                'copyright': copyright,
+                'html_theme': 'furo',
+                'html_static_path': [str(static_path),
+                                     *(str(i) for i in static_paths)],
+                'html_css_files': ['hat.css'],
+                'html_use_index': False,
+                'html_show_sourcelink': False,
+                'html_show_sphinx': False,
+                'html_sidebars': {'**': ['sidebar/brand.html',
+                                         'sidebar/scroll-start.html',
+                                         'sidebar/navigation.html',
+                                         'sidebar/scroll-end.html']},
+                'todo_include_todos': True,
+                **conf}
+
+        app = sphinx.application.Sphinx(srcdir=str(src_dir),
+                                        confdir=None,
+                                        outdir=str(dst_dir),
+                                        doctreedir=str(dst_dir / '.doctrees'),
+                                        buildername=out_type.value,
+                                        confoverrides=conf,
+                                        status=None)
+        app.build()
 
 
 def build_latex(src: Path, dest: Path):
@@ -30,11 +69,11 @@ def build_latex(src: Path, dest: Path):
                        cwd=src, stdout=subprocess.DEVNULL, check=True)
 
 
-def build_pdoc(module: str, dest: Path):
-    common.mkdir_p(dest)
+def build_pdoc(module: str, dst_dir: Path):
+    common.mkdir_p(dst_dir)
     subprocess.run([sys.executable, '-m', 'pdoc',
                     '-d', 'google',
-                    '-o', str(dest), module],
+                    '-o', str(dst_dir), module],
                    stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL,
                    check=True)

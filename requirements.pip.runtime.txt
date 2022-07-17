@@ -1,5 +1,7 @@
 build >= 0.8.0
 doit >= 0.36.0
+furo >= 2022.6.21
 packaging >= 21.3
 setuptools >= 63.2.0
+sphinx >= 5.0.2
 wheel >= 0.37.1
