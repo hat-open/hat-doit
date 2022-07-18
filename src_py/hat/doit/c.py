@@ -1,5 +1,7 @@
 from pathlib import Path
+import importlib.resources
 import os
+import subprocess
 import sysconfig
 import typing
 
@@ -173,6 +175,23 @@ def get_py_ld_flags(py_limited_api: bool
             yield f"-lpython{major}"
         else:
             yield f"-lpython{major}.{minor}"
+
+
+def get_task_clang_format(src_paths: typing.Iterable[Path]) -> typing.Dict:
+
+    def clang_format(src_path):
+        # TODO: change 'hat.doit.clang' with imported module
+        with importlib.resources.path('hat.doit.clang',
+                                      'clang-format.yaml') as style_path:
+            subprocess.run(['clang-format', '-i',
+                            f'-style=file:{style_path}',
+                            str(src_path)],
+                           check=True)
+
+    for src_path in src_paths:
+        yield {'name': str(src_path),
+               'actions': [(clang_format, [src_path])],
+               'file_dep': [src_path]}
 
 
 class CBuild:
