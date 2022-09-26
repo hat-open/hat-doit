@@ -129,7 +129,7 @@ def get_version(version_type: VersionType = VersionType.SEMVER,
         return version
 
     elif version_type == VersionType.PIP:
-        return packaging.version.Version(version).public
+        return str(packaging.version.Version(version))
 
     raise ValueError()
 
