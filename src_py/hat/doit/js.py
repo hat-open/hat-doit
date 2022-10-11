@@ -1,4 +1,5 @@
 from pathlib import Path
+import enum
 import importlib.resources
 import json
 import subprocess
@@ -51,12 +52,18 @@ def build_npm(src_dir: Path,
                    check=True)
 
 
+class ESLintConf(enum.Enum):
+    JS = 'js'
+    TS = 'ts'
+
+
 def run_eslint(path: Path,
-               node_modules_dir: Path = Path('node_modules')):
+               conf: ESLintConf = ESLintConf.JS,
+               eslint_path: Path = Path('node_modules/.bin/eslint')):
     # TODO: change 'hat.doit.eslint' with imported module
     with importlib.resources.path('hat.doit.eslint',
-                                  'eslintrc.yml') as conf_path:
-        subprocess.run([str(node_modules_dir / '.bin/eslint'),
+                                  f'{conf.value}.yml') as conf_path:
+        subprocess.run([str(eslint_path),
                         '-c', str(conf_path),
                         str(path)],
                        check=True)

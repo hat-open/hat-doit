@@ -24,9 +24,6 @@ rules:
     semi:
         - error
         - always
-    # linebreak-style:
-    #     - error
-    #     - unix
-    # quotes:
-    #     - error
-    #     - single
+    linebreak-style:
+        - error
+        - unix
