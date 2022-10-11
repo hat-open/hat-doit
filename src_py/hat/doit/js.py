@@ -60,10 +60,21 @@ class ESLintConf(enum.Enum):
 def run_eslint(path: Path,
                conf: ESLintConf = ESLintConf.JS,
                eslint_path: Path = Path('node_modules/.bin/eslint')):
+    if conf == ESLintConf.JS:
+        parser = 'espree'
+
+    elif conf == ESLintConf.TS:
+        parser = '@typescript-eslint/parser'
+
+    else:
+        raise ValueError('unsupported conf')
+
     # TODO: change 'hat.doit.eslint' with imported module
     with importlib.resources.path('hat.doit.eslint',
-                                  f'{conf.value}.yml') as conf_path:
+                                  f'{conf.value}.yaml') as conf_path:
         subprocess.run([str(eslint_path),
+                        '--parser', parser,
+                        '--resolve-plugins-relative-to', '.',
                         '-c', str(conf_path),
                         str(path)],
                        check=True)
