@@ -106,6 +106,12 @@ def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
         i = i.strip()
         if not i or i.startswith('#'):
             continue
+        if i.startswith('-r'):
+            for arg in i.split(' ')[1:]:
+                if arg:
+                    yield from read_pip_requirements(Path(arg))
+                    break
+            continue
         yield Requirement(i)
 
 
