@@ -61,12 +61,13 @@ def build_sphinx(src_dir: Path,
         app.build()
 
 
-def build_latex(src: Path, dest: Path):
+def build_latex(src: Path, dest: Path, n_passes: int = 1):
     common.mkdir_p(dest)
-    for i in src.glob('*.tex'):
-        subprocess.run(['xelatex', '-interaction=batchmode',
-                        f'-output-directory={dest.resolve()}', i.name],
-                       cwd=src, stdout=subprocess.DEVNULL, check=True)
+    for _ in range(n_passes):
+        for i in src.glob('*.tex'):
+            subprocess.run(['xelatex', '-interaction=batchmode',
+                            f'-output-directory={dest.resolve()}', i.name],
+                           cwd=src, stdout=subprocess.DEVNULL, check=True)
 
 
 def build_pdoc(module: str, dst_dir: Path):
