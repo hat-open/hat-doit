@@ -164,11 +164,17 @@ def _get_platform_tag(platform):
     if platform == common.Platform.DARWIN_X86_64:
         return 'macosx_10_13_x86_64'
 
-    if platform == common.Platform.LINUX_X86_64:
-        return 'manylinux1_x86_64'
+    if platform == common.Platform.LINUX_GNU_X86_64:
+        return 'manylinux_2_24_x86_64'
 
-    if platform == common.Platform.LINUX_AARCH64:
-        return 'manylinux2014_aarch64'
+    if platform == common.Platform.LINUX_GNU_AARCH64:
+        return 'manylinux_2_24_aarch64'
+
+    if platform == common.Platform.LINUX_MUSL_X86_64:
+        return 'musllinux_1_2_x86_64'
+
+    if platform == common.Platform.LINUX_MUSL_AARCH64:
+        return 'musllinux_1_2_aarch64'
 
     raise NotImplementedError()
 

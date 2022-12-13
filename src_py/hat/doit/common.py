@@ -19,8 +19,10 @@ import packaging.version
 class Platform(enum.Enum):
     WINDOWS_AMD64 = ('win32', 'amd64')
     DARWIN_X86_64 = ('darwin', 'x86_64')
-    LINUX_X86_64 = ('linux', 'x86_64')
-    LINUX_AARCH64 = ('linux', 'aarch64')
+    LINUX_GNU_X86_64 = ('linux', 'glibc', 'x86_64')
+    LINUX_GNU_AARCH64 = ('linux', 'glibc', 'aarch64')
+    LINUX_MUSL_X86_64 = ('linux', 'musl', 'x86_64')
+    LINUX_MUSL_AARCH64 = ('linux', 'musl', 'aarch64')
 
 
 class PyVersion(enum.Enum):
@@ -42,7 +44,18 @@ class License(enum.Enum):
 
 now: datetime.datetime = datetime.datetime.now()
 
-local_platform: Platform = Platform((sys.platform, platform.machine().lower()))
+
+def _get_local_platform():
+    machine = platform.machine().lower()
+
+    if sys.platform == 'linux':
+        libc, _ = platform.libc_ver()
+        return Platform((sys.platform, libc or 'musl', machine))
+
+    return Platform((sys.platform, machine))
+
+
+local_platform: Platform = _get_local_platform()
 target_platform: Platform = (Platform[os.environ['TARGET_PLATFORM'].upper()]
                              if 'TARGET_PLATFORM' in os.environ
                              else local_platform)
