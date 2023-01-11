@@ -21,6 +21,7 @@ class Platform(enum.Enum):
     DARWIN_X86_64 = ('darwin', 'x86_64')
     LINUX_GNU_X86_64 = ('linux', 'glibc', 'x86_64')
     LINUX_GNU_AARCH64 = ('linux', 'glibc', 'aarch64')
+    LINUX_GNU_ARMV7L = ('linux', 'glibc', 'armv7l')
     LINUX_MUSL_X86_64 = ('linux', 'musl', 'x86_64')
     LINUX_MUSL_AARCH64 = ('linux', 'musl', 'aarch64')
 

@@ -15,6 +15,7 @@ def get_exe_suffix(platform: common.Platform) -> str:
     if platform in (common.Platform.DARWIN_X86_64,
                     common.Platform.LINUX_GNU_X86_64,
                     common.Platform.LINUX_GNU_AARCH64,
+                    common.Platform.LINUX_GNU_ARMV7L,
                     common.Platform.LINUX_MUSL_X86_64,
                     common.Platform.LINUX_MUSL_AARCH64):
         return ''
@@ -31,6 +32,7 @@ def get_lib_suffix(platform: common.Platform) -> str:
 
     if platform in (common.Platform.LINUX_GNU_X86_64,
                     common.Platform.LINUX_GNU_AARCH64,
+                    common.Platform.LINUX_GNU_ARMV7L,
                     common.Platform.LINUX_MUSL_X86_64,
                     common.Platform.LINUX_MUSL_AARCH64):
         return '.so'
@@ -50,6 +52,7 @@ def get_ext_suffix(platform: common.Platform,
     elif platform in (common.Platform.DARWIN_X86_64,
                       common.Platform.LINUX_GNU_X86_64,
                       common.Platform.LINUX_GNU_AARCH64,
+                      common.Platform.LINUX_GNU_ARMV7L,
                       common.Platform.LINUX_MUSL_X86_64,
                       common.Platform.LINUX_MUSL_AARCH64):
         suffix = '.so'
@@ -71,6 +74,9 @@ def get_ext_suffix(platform: common.Platform,
 
     elif platform == common.Platform.LINUX_GNU_AARCH64:
         return f'.cpython-{major}{minor}-aarch64-linux-gnu{suffix}'
+
+    elif platform == common.Platform.LINUX_GNU_ARMV7L:
+        return f'.cpython-{major}{minor}-armv7l-linux-gnu{suffix}'
 
     elif platform == common.Platform.LINUX_MUSL_X86_64:
         # TODO sysconfig.get_config_var("SOABI") returns gnu
@@ -167,6 +173,7 @@ def get_py_cpp_flags(py_limited_api: typing.Optional[common.PyVersion]
             yield f'-I/usr/x86_64-w64-mingw32/include/python{major}{minor}'
 
         elif common.target_platform in (common.Platform.LINUX_GNU_AARCH64,
+                                        common.Platform.LINUX_GNU_ARMV7L,
                                         common.Platform.LINUX_MUSL_X86_64,
                                         common.Platform.LINUX_MUSL_AARCH64):
             yield f'-I/usr/include/python{major}.{minor}'

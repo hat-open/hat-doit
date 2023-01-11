@@ -170,6 +170,9 @@ def _get_platform_tag(platform):
     if platform == common.Platform.LINUX_GNU_AARCH64:
         return 'manylinux_2_24_aarch64'
 
+    if platform == common.Platform.LINUX_GNU_ARMV7L:
+        return 'manylinux_2_24_armv7l'
+
     if platform == common.Platform.LINUX_MUSL_X86_64:
         return 'musllinux_1_2_x86_64'
 
