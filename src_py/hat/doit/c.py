@@ -175,10 +175,15 @@ def get_py_c_flags(platform: common.Platform = common.target_platform,
             yield f'-I/usr/x86_64-w64-mingw32/include/python{major}{minor}'
 
         elif platform in (common.Platform.LINUX_GNU_AARCH64,
-                          common.Platform.LINUX_GNU_ARMV7L,
                           common.Platform.LINUX_MUSL_X86_64,
                           common.Platform.LINUX_MUSL_AARCH64):
             yield f'-I/usr/include/python{major}.{minor}'
+
+        elif platform == common.Platform.LINUX_GNU_ARMV7L:
+            # TODO use correct python version
+            # yield f'-I/usr/lib32/python{major}.{minor}/include/python{major}.{minor}'  # NOQA
+            # yield '-I/usr/lib32/python3.10/include/python3.10'
+            pass
 
         else:
             raise ValueError('unsupported platform')
