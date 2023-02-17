@@ -33,9 +33,6 @@ def build_wheel(src_dir: Path,
     common.rm_rf(dst_dir)
     common.mkdir_p(dst_dir)
 
-    if packages is None:
-        packages = setuptools.find_namespace_packages(src_dir)
-
     if src_paths is None:
         src_paths = [src_dir]
     src_paths = itertools.chain.from_iterable(
@@ -54,6 +51,9 @@ def build_wheel(src_dir: Path,
             common.mkdir_p(dst_path.parent)
             common.cp_r(src_path, dst_path)
             f.write(f"include {dst_path.relative_to(dst_dir)}\n")
+
+    if packages is None:
+        packages = setuptools.find_namespace_packages(dst_dir)
 
     (dst_dir / 'setup.py').write_text(_wheel_setup_py.format(
         name=repr(name),
