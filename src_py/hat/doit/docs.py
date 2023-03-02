@@ -70,11 +70,15 @@ def build_latex(src: Path, dest: Path, n_passes: int = 1):
                            cwd=src, stdout=subprocess.DEVNULL, check=True)
 
 
-def build_pdoc(module: str, dst_dir: Path):
+def build_pdoc(module: str,
+               dst_dir: Path,
+               exclude: typing.List[str] = []):
     common.mkdir_p(dst_dir)
     subprocess.run([sys.executable, '-m', 'pdoc',
                     '-d', 'google',
-                    '-o', str(dst_dir), module],
+                    '-o', str(dst_dir),
+                    module,
+                    *(f'!{i}' for i in exclude)],
                    stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL,
                    check=True)
