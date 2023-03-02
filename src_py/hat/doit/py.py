@@ -212,6 +212,10 @@ wheel.bdist_wheel.bdist_wheel.get_tag = lambda self: wheel_tag
 
 class Distribution(setuptools.Distribution):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.libraries = [] if has_c_libraries else None
+
     def has_ext_modules(self):
         return has_ext_modules
 
