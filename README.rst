@@ -1,45 +1,68 @@
+.. _pydoit: https://pydoit.org
+.. _git repository: https://github.com/hat-open/hat-doit.git
+.. _PyPI project: https://pypi.org/project/hat-doit
+.. _Hat Open: https://hat-open.com
+.. _Končar Digital: https://www.koncar.hr/en
+
+
 hat-doit - Hat build utility functions
 ======================================
 
-This library is part of Hat Open project - open-source framework of tools and
-libraries for developing applications used for remote monitoring, control and
-management of intelligent electronic devices such as IoT devices, PLCs,
-industrial automation or home automation systems.
+Hat open projects uses `pydoit`_ as build automation tool. This repository
+provides utility functions commonly used in definition of doit tasks.
 
-Development of Hat Open and associated repositories is sponsored by
-`Končar Digital <https://www.koncar.hr>`_.
-
-For more information see:
-
-    * hat-doit git repository - `<https://github.com/hat-open/hat-doit.git>`_
-    * Hat Open homepage - `<https://hat-open.com>`_
-
-.. warning::
-
-    This project is currently in state of active development. Features,
-    functionality and API are unstable.
+For more information see `git repository`_.
 
 
-About
------
+Runtime requirements
+--------------------
 
-Hat open projects uses `pydoit <https://pydoit.org/>`_ as build automation
-tool. This repository provides utility functions commonly used in
-definition of doit tasks.
+* python >=3.8
 
 
 Install
 -------
 
-::
+`hat-doit` is available as `PyPI project`_::
 
     $ pip install hat-doit
+
+
+Build
+-----
+
+Build tool used for `hat-doit` is pydoit. It can be installed together with
+other python dependencies by running::
+
+    $ pip install -r requirements.pip.dev.txt
+
+For listing available doit tasks, use::
+
+    $ doit list
+
+Default task::
+
+    $ doit
+
+creates wheel package inside `build` directory.
+
+
+Hat Open
+--------
+
+`hat-doit` is part of `Hat Open`_ project - open-source framework of tools
+and libraries for developing applications used for remote monitoring, control
+and management of intelligent electronic devices such as IoT devices, PLCs,
+industrial automation or home automation systems.
+
+Development of Hat Open and associated repositories is sponsored by
+`Končar Digital`_.
 
 
 License
 -------
 
-Copyright 2020-2022 Hat Open AUTHORS
+Copyright 2020-2023 Hat Open AUTHORS
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

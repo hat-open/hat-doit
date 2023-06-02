@@ -228,7 +228,8 @@ def get_py_ld_libs(platform: common.Platform = common.target_platform,
             yield f"-lpython{major}.{minor}"
 
 
-def get_task_clang_format(src_paths: typing.Iterable[Path]) -> typing.Dict:
+def get_task_clang_format(src_paths: typing.Iterable[Path]
+                          ) -> typing.Iterable[typing.Dict]:
 
     def clang_format(src_path):
         # TODO: change 'hat.doit.clang' with imported module
