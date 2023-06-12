@@ -23,12 +23,11 @@ def task_build():
     """Build"""
 
     def build():
-        build_wheel(
-            src_dir=src_py_dir,
-            dst_dir=build_dir,
-            name='hat-doit',
-            description='Hat build utility functions',
-            url='https://github.com/hat-open/hat-doit',
-            license=common.License.APACHE2)
+        build_wheel(src_dir=src_py_dir,
+                    dst_dir=build_dir,
+                    name='hat-doit',
+                    description='Hat build utility functions',
+                    url='https://github.com/hat-open/hat-doit',
+                    license=common.License.APACHE2)
 
     return {'actions': [build]}

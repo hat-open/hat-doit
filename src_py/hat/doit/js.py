@@ -3,9 +3,9 @@ import enum
 import importlib.resources
 import json
 import subprocess
-import typing
 
 from . import common
+from . import eslint as hat_doit_eslint
 
 
 def build_npm(src_dir: Path,
@@ -16,9 +16,9 @@ def build_npm(src_dir: Path,
               readme_path: Path = Path('README.rst'),
               version_path: Path = Path('VERSION'),
               main: str = 'index.js',
-              homepage: typing.Optional[str] = None,
-              repository: typing.Optional[str] = None,
-              dependencies_path: typing.Optional[Path] = Path('package.json')):
+              homepage: str | None = None,
+              repository: str | None = None,
+              dependencies_path: Path | None = Path('package.json')):
     common.rm_rf(dst_dir)
     common.cp_r(src_dir, dst_dir)
 
@@ -69,9 +69,9 @@ def run_eslint(path: Path,
     else:
         raise ValueError('unsupported conf')
 
-    # TODO: change 'hat.doit.eslint' with imported module
-    with importlib.resources.path('hat.doit.eslint',
-                                  f'{conf.value}.yaml') as conf_path:
+    package = importlib.resources.files(hat_doit_eslint)
+    with importlib.resources.as_file(package /
+                                     f'{conf.value}.yaml') as conf_path:
         subprocess.run([str(eslint_path),
                         '--parser', parser,
                         '--resolve-plugins-relative-to', '.',

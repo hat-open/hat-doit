@@ -1,8 +1,8 @@
 from pathlib import Path
+from typing import Iterable
 import itertools
 import subprocess
 import sys
-import typing
 
 from packaging.requirements import Requirement
 import setuptools
@@ -16,17 +16,17 @@ def build_wheel(src_dir: Path,
                 description: str,
                 url: str,
                 license: common.License,
-                packages: typing.List[str] = None,
-                src_paths: typing.Optional[typing.Iterable[Path]] = None,
+                packages: list[str] = None,
+                src_paths: Iterable[Path] | None = None,
                 version_path: Path = Path('VERSION'),
                 readme_path: Path = Path('README.rst'),
-                license_path: typing.Optional[Path] = Path('LICENSE'),
-                requirements_path: typing.Optional[Path] = Path('requirements.pip.runtime.txt'),  # NOQA
-                py_versions: typing.Iterable[common.PyVersion] = common.PyVersion,  # NOQA
-                py_limited_api: typing.Optional[common.PyVersion] = None,
-                platform: typing.Optional[common.Platform] = None,
-                console_scripts: typing.List[str] = [],
-                gui_scripts: typing.List[str] = [],
+                license_path: Path | None = Path('LICENSE'),
+                requirements_path: Path | None = Path('requirements.pip.runtime.txt'),  # NOQA
+                py_versions: Iterable[common.PyVersion] = common.PyVersion,
+                py_limited_api: common.PyVersion | None = None,
+                platform: common.Platform | None = None,
+                console_scripts: list[str] = [],
+                gui_scripts: list[str] = [],
                 zip_safe: bool = True,
                 has_ext_modules: bool = False,
                 has_c_libraries: bool = False):
@@ -99,7 +99,7 @@ def run_flake8(path: Path):
                    check=True)
 
 
-def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
+def read_pip_requirements(path: Path) -> Iterable[Requirement]:
     # TODO: implement full format
     #       https://pip.pypa.io/en/stable/cli/pip_install/
     for i in Path(path).read_text('utf-8').split('\n'):
@@ -115,8 +115,8 @@ def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
         yield Requirement(i)
 
 
-def get_py_versions(py_limited_api: typing.Optional[common.PyVersion]
-                    ) -> typing.List[common.PyVersion]:
+def get_py_versions(py_limited_api: common.PyVersion | None
+                    ) -> list[common.PyVersion]:
     if py_limited_api is None:
         return [common.target_py_version]
 
@@ -239,7 +239,7 @@ setuptools.setup(
     include_package_data=True,
     zip_safe=zip_safe,
     install_requires=requirements,
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     options={{
         'bdist_wheel': {{
             'python_tag': python_tag,

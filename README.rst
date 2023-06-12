@@ -17,7 +17,7 @@ For more information see `git repository`_.
 Runtime requirements
 --------------------
 
-* python >=3.8
+* python >=3.10
 
 
 Install

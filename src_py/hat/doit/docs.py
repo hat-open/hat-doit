@@ -1,15 +1,16 @@
 from pathlib import Path
+from typing import Any, Iterable
 import enum
 import importlib.resources
 import json
 import subprocess
 import sys
 import tempfile
-import typing
 
 import sphinx.application
 
 from . import common
+from . import sphinx as hat_doit_sphinx
 
 
 class SphinxOutputType(enum.Enum):
@@ -21,17 +22,17 @@ def build_sphinx(src_dir: Path,
                  dst_dir: Path,
                  project: str,
                  out_type: SphinxOutputType = SphinxOutputType.HTML,
-                 extensions: typing.Iterable[str] = [],
+                 extensions: Iterable[str] = [],
                  version_path: Path = Path('VERSION'),
-                 copyright: str = '2020-2022, Hat Open AUTHORS',
-                 static_paths: typing.Iterable[Path] = [],
-                 conf: typing.Dict[str, typing.Any] = {}):
+                 copyright: str = '2020-2023, Hat Open AUTHORS',
+                 static_paths: Iterable[Path] = [],
+                 conf: dict[str, Any] = {}):
     common.mkdir_p(dst_dir)
     version = common.get_version(version_type=common.VersionType.PIP,
                                  version_path=version_path)
 
-    # TODO: change 'hat.doit.sphinx' with imported module
-    with importlib.resources.path('hat.doit.sphinx', 'static') as static_path:
+    package = importlib.resources.files(hat_doit_sphinx)
+    with importlib.resources.as_file(package / 'static') as static_path:
         conf = {'extensions': ['sphinx.ext.todo',
                                *extensions],
                 'version': version,
@@ -72,7 +73,7 @@ def build_latex(src: Path, dest: Path, n_passes: int = 1):
 
 def build_pdoc(module: str,
                dst_dir: Path,
-               exclude: typing.List[str] = []):
+               exclude: list[str] = []):
     common.mkdir_p(dst_dir)
     subprocess.run([sys.executable, '-m', 'pdoc',
                     '-d', 'google',

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Iterable
 import functools
 import importlib.resources
 import os
@@ -6,8 +7,8 @@ import shlex
 import shutil
 import subprocess
 import sysconfig
-import typing
 
+from . import clang as hat_doit_clang
 from . import common
 
 
@@ -47,7 +48,7 @@ def get_lib_suffix(platform: common.Platform = common.target_platform
 
 def get_py_ext_suffix(platform: common.Platform = common.target_platform,
                       py_version: common.PyVersion = common.target_py_version,
-                      py_limited_api: typing.Optional[common.PyVersion] = None
+                      py_limited_api: common.PyVersion | None = None
                       ) -> str:
     _, major, minor = (py_limited_api or py_version).value
 
@@ -133,7 +134,7 @@ def get_cc(platform: common.Platform = common.target_platform
 
 
 def get_c_flags(platform: common.Platform = common.target_platform
-                ) -> typing.Iterable[str]:
+                ) -> Iterable[str]:
     yield from shlex.split(os.environ.get('CFLAGS', ''))
 
     if platform != common.local_platform:
@@ -142,14 +143,14 @@ def get_c_flags(platform: common.Platform = common.target_platform
 
 
 def get_ld_flags(platform: common.Platform = common.target_platform
-                 ) -> typing.Iterable[str]:
+                 ) -> Iterable[str]:
     yield from shlex.split(os.environ.get('LDFLAGS', ''))
 
 
 def get_py_c_flags(platform: common.Platform = common.target_platform,
                    py_version: common.PyVersion = common.target_py_version,
-                   py_limited_api: typing.Optional[common.PyVersion] = None
-                   ) -> typing.Iterable[str]:
+                   py_limited_api: common.PyVersion | None = None
+                   ) -> Iterable[str]:
     _, major, minor = py_version.value
 
     yield '-DPY_SSIZE_T_CLEAN'
@@ -194,8 +195,8 @@ def get_py_c_flags(platform: common.Platform = common.target_platform,
 
 def get_py_ld_flags(platform: common.Platform = common.target_platform,
                     py_version: common.PyVersion = common.target_py_version,
-                    py_limited_api: typing.Optional[common.PyVersion] = None
-                    ) -> typing.Iterable[str]:
+                    py_limited_api: common.PyVersion | None = None
+                    ) -> Iterable[str]:
     _, major, minor = py_version.value
 
     if platform == common.local_platform:
@@ -211,8 +212,8 @@ def get_py_ld_flags(platform: common.Platform = common.target_platform,
 
 def get_py_ld_libs(platform: common.Platform = common.target_platform,
                    py_version: common.PyVersion = common.target_py_version,
-                   py_limited_api: typing.Optional[common.PyVersion] = None
-                   ) -> typing.Iterable[str]:
+                   py_limited_api: common.PyVersion | None = None
+                   ) -> Iterable[str]:
     _, major, minor = py_version.value
 
     if platform == common.Platform.WINDOWS_AMD64:
@@ -228,13 +229,13 @@ def get_py_ld_libs(platform: common.Platform = common.target_platform,
             yield f"-lpython{major}.{minor}"
 
 
-def get_task_clang_format(src_paths: typing.Iterable[Path]
-                          ) -> typing.Iterable[typing.Dict]:
+def get_task_clang_format(src_paths: Iterable[Path]
+                          ) -> Iterable[dict]:
 
     def clang_format(src_path):
-        # TODO: change 'hat.doit.clang' with imported module
-        with importlib.resources.path('hat.doit.clang',
-                                      'clang-format.yaml') as style_path:
+        package = importlib.resources.files(hat_doit_clang)
+        with importlib.resources.as_file(package /
+                                         'clang-format.yaml') as style_path:
             subprocess.run(['clang-format', '-i',
                             f'-style=file:{style_path}',
                             str(src_path)],
@@ -249,14 +250,14 @@ def get_task_clang_format(src_paths: typing.Iterable[Path]
 class CBuild:
 
     def __init__(self,
-                 src_paths: typing.List[Path],
+                 src_paths: list[Path],
                  build_dir: Path, *,
                  src_dir: Path = Path('.'),
                  platform: common.Platform = common.target_platform,
-                 c_flags: typing.List[str] = [],
-                 ld_flags: typing.List[str] = [],
-                 ld_libs: typing.List[str] = [],
-                 task_dep: typing.List[str] = []):
+                 c_flags: list[str] = [],
+                 ld_flags: list[str] = [],
+                 ld_libs: list[str] = [],
+                 task_dep: list[str] = []):
         self._src_paths = src_paths
         self._build_dir = build_dir
         self._src_dir = src_dir
@@ -266,7 +267,7 @@ class CBuild:
         self._ld_libs = ld_libs
         self._task_dep = task_dep
 
-    def get_task_exe(self, exe_path: Path) -> typing.Dict:
+    def get_task_exe(self, exe_path: Path) -> dict:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
         yield {'name': str(exe_path),
@@ -281,7 +282,7 @@ class CBuild:
                'task_dep': self._task_dep,
                'targets': [exe_path]}
 
-    def get_task_lib(self, lib_path: Path) -> typing.Dict:
+    def get_task_lib(self, lib_path: Path) -> dict:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
         shared_flag = (
@@ -300,7 +301,7 @@ class CBuild:
                'task_dep': self._task_dep,
                'targets': [lib_path]}
 
-    def get_task_objs(self) -> typing.Dict:
+    def get_task_objs(self) -> dict:
         for src_path in self._src_paths:
             dep_path = self._get_dep_path(src_path)
             obj_path = self._get_obj_path(src_path)
@@ -317,7 +318,7 @@ class CBuild:
                    'task_dep': self._task_dep,
                    'targets': [obj_path]}
 
-    def get_task_deps(self) -> typing.Dict:
+    def get_task_deps(self) -> dict:
         for src_path in self._src_paths:
             dep_path = self._get_dep_path(src_path)
             yield {'name': str(dep_path),

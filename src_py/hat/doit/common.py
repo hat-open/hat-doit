@@ -7,9 +7,7 @@ import multiprocessing
 import os
 import platform
 import shutil
-import subprocess
 import sys
-import typing
 
 import packaging.requirements
 import packaging.tags
@@ -27,8 +25,6 @@ class Platform(enum.Enum):
 
 
 class PyVersion(enum.Enum):
-    CP38 = ('cp', 3, 8)
-    CP39 = ('cp', 3, 9)
     CP310 = ('cp', 3, 10)
     CP311 = ('cp', 3, 11)
 
@@ -70,9 +66,9 @@ target_py_version: PyVersion = (
     if 'TARGET_PY_VERSION' in os.environ else local_py_version)
 
 
-def init(python_paths: typing.List[os.PathLike] = [],
-         default_tasks: typing.List[str] = []
-         ) -> typing.Dict:
+def init(python_paths: list[os.PathLike] = [],
+         default_tasks: list[str] = []
+         ) -> dict:
     python_paths = [str(Path(i).resolve()) for i in python_paths]
     sys.path = [*python_paths, *sys.path]
     os.environ['PYTHONPATH'] = os.pathsep.join(
@@ -120,8 +116,8 @@ def cp_r(src: os.PathLike, dest: os.PathLike):
 
 
 def path_rglob(path: Path,
-               patterns: typing.List[str] = ['*'],
-               blacklist: typing.Set[str] = set()):
+               patterns: list[str] = ['*'],
+               blacklist: set[str] = set()):
     if path.name in blacklist:
         return
     if not path.is_dir():
@@ -147,24 +143,3 @@ def get_version(version_type: VersionType = VersionType.SEMVER,
         return str(packaging.version.Version(version))
 
     raise ValueError()
-
-
-class StaticWebServer:
-
-    def __init__(self, static_dir: os.PathLike, port: int):
-        self._p = subprocess.Popen([sys.executable,
-                                    '-m', 'http.server',
-                                    '-b', '127.0.0.1',
-                                    '-d', str(static_dir),
-                                    str(port)],
-                                   stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.DEVNULL)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
-
-    def close(self):
-        self._p.terminate()
