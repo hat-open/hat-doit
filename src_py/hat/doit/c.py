@@ -82,7 +82,8 @@ def get_py_ext_suffix(platform: common.Platform = common.target_platform,
         return f'.cpython-{major}{minor}-aarch64-linux-gnu{suffix}'
 
     elif platform == common.Platform.LINUX_GNU_ARMV7L:
-        return f'.cpython-{major}{minor}-armv7l-linux-gnu{suffix}'
+        # return f'.cpython-{major}{minor}-armv7l-linux-gnu{suffix}'
+        return f'.cpython-{major}{minor}-arm-linux-gnueabi{suffix}'
 
     elif platform == common.Platform.LINUX_MUSL_X86_64:
         # TODO sysconfig.get_config_var("SOABI") returns gnu
