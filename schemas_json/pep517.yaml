@@ -1,0 +1,5 @@
+id: "hat-doit://pep517.yaml#"
+properties:
+    build_wheel_task:
+        type: string
+        default: build

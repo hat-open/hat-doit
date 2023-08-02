@@ -1,0 +1,41 @@
+[project]
+name = "hat-doit"
+version = "0.14.0"
+description = "Hat build utility functions"
+readme = "README.rst"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+dependencies = [
+    "build >=0.10.0",
+    "doit >=0.36.0",
+    "flake8 >=6.0.0",
+    "furo >=2023.5.20",
+    "packaging >=23.1",
+    "pdoc >=13.1.1",
+    "pip-tools >=7.1.0",
+    "pytest >=7.3.2",
+    "pytest-asyncio >=0.21.0",
+    "pytest-cov >=4.1.0",
+    "pytest-timeout >=2.1.0",
+    "setuptools >=67.8.0",
+    "sphinx >=7.0.1",
+    "tomli ~=2.0.1",
+    "tomli_w ~=1.0.0",
+    "wheel >=0.40.0",
+]
+
+[project.urls]
+Homepage = "http://hat-open.com"
+Repository = "https://github.com/hat-open/hat-doit.git"
+
+[build-system]
+build-backend = "hat.doit.pep517"
+backend-path = ["src_py"]
+requires = [
+    "build",
+    "doit",
+    "setuptools",
+    "tomli",
+    "tomli_w",
+    "wheel",
+]

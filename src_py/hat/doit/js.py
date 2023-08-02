@@ -1,6 +1,7 @@
 from pathlib import Path
 import enum
 import importlib.resources
+import itertools
 import json
 import subprocess
 
@@ -8,47 +9,124 @@ from . import common
 from . import eslint as hat_doit_eslint
 
 
+def get_task_build_npm(src_dir: Path,
+                       build_dir: Path,
+                       name: str, *,
+                       file_dep=[],
+                       task_dep=[],
+                       **kwargs):
+
+    def action():
+        build_npm(src_dir=src_dir,
+                  build_dir=build_dir,
+                  name=name,
+                  **kwargs)
+
+    return {'actions': [action],
+            'file_dep': file_dep,
+            'task_dep': task_dep}
+
+
 def build_npm(src_dir: Path,
-              dst_dir: Path,
-              name: str,
-              description: str,
-              license: common.License,
-              readme_path: Path = Path('README.rst'),
-              version_path: Path = Path('VERSION'),
-              main: str = 'index.js',
+              build_dir: Path,
+              name: str, *,
+              version: str | None = None,
+              description: str | None = None,
+              keywords: list[str] | None = None,
               homepage: str | None = None,
-              repository: str | None = None,
-              dependencies_path: Path | None = Path('package.json')):
-    common.rm_rf(dst_dir)
-    common.cp_r(src_dir, dst_dir)
+              license: common.License | None = None,
+              author: dict[str, str] | None = None,
+              contributors: list[dict[str, str]] | None = None,
+              main: str | None = 'index.js',
+              browser: str | None = None,
+              bin: str | dict[str, str] | None = None,
+              man: str | list[str] | None = None,
+              repository: str | dict[str, str] | None = None,
+              dependencies_path: Path | None = Path('package.json'),
+              readme_path: Path | None = None):
+    src_conf = common.get_conf()
+    src_project_conf = src_conf.get('project', {})
 
-    dst_readme_path = dst_dir / readme_path.with_suffix('.md').name
-    subprocess.run(['pandoc', str(readme_path), '-o', str(dst_readme_path)],
-                   check=True)
+    version = common.get_version(common.VersionType.SEMVER, version)
+    dst_conf = {'name': name,
+                'version': version}
 
-    dependencies_package = (json.loads(dependencies_path.read_text())
-                            if dependencies_path else {})
-    dependencies = dependencies_package.get('dependencies')
+    if description is None:
+        description = src_project_conf.get('description')
+    if description is not None:
+        dst_conf['description'] = description
 
-    conf = {
-        'name': name,
-        'description': description,
-        'license': license.value,
-        'version': common.get_version(version_type=common.VersionType.SEMVER,
-                                      version_path=version_path),
-        'main': main}
-    if homepage:
-        conf['homepage'] = homepage
-    if repository:
-        conf['repository'] = repository
-    if dependencies:
-        conf['dependencies'] = dependencies
+    if keywords is not None:
+        dst_conf['keywords'] = keywords
 
-    (dst_dir / 'package.json').write_text(json.dumps(conf, indent=4),
-                                          encoding='utf-8')
+    if homepage is None:
+        homepage = src_project_conf.get('urls', {}).get('Homepage')
+    if homepage is not None:
+        dst_conf['homepage'] = homepage
+
+    if license is None:
+        license = (common.License(src_project_conf['license']['text'])
+                   if ('license' in src_project_conf and
+                       'text' in src_project_conf['license'])
+                   else common.License.PROPRIETARY)
+    dst_conf['license'] = license.value
+
+    if author is None and src_project_conf.get('authors'):
+        author = src_project_conf['authors'][0]
+    if author is not None:
+        dst_conf['author'] = author
+
+    if contributors is None:
+        contributors = [
+            i for i in itertools.chain(src_project_conf.get('authors', []),
+                                       src_project_conf.get('maintainers', []))
+            if i != author]
+        contributors = contributors or None
+    if contributors is not None:
+        dst_conf['contributors'] = contributors
+
+    if main is not None:
+        dst_conf['main'] = main
+
+    if browser is not None:
+        dst_conf['browser'] = browser
+
+    if bin is not None:
+        dst_conf['bin'] = bin
+
+    if man is not None:
+        dst_conf['man'] = man
+
+    if repository is None:
+        repository = src_project_conf.get('urls', {}).get('Repository')
+    if repository is not None:
+        dst_conf['repository'] = repository
+
+    if dependencies_path is not None:
+        dependencies_package = json.loads(dependencies_path.read_text())
+        dependencies = dependencies_package.get('dependencies')
+        if dependencies:
+            dst_conf['dependencies'] = dependencies
+
+    common.rm_rf(build_dir)
+    common.cp_r(src_dir, build_dir)
+
+    if readme_path is None and 'readme' in src_project_conf:
+        readme_path = Path(src_project_conf['readme'])
+    if readme_path is not None:
+        dst_readme_path = build_dir / readme_path.with_suffix('.md').name
+        subprocess.run(['pandoc',
+                        str(readme_path),
+                        '-o', str(dst_readme_path)],
+                       check=True)
+
+    dst_conf_path = build_dir / 'package.json'
+    dst_conf_path.write_text(json.dumps(dst_conf, indent=4),
+                             encoding='utf-8')
+
     subprocess.run(['npm', 'pack', '--silent'],
                    stdout=subprocess.DEVNULL,
-                   cwd=str(dst_dir),
+                   cwd=str(build_dir),
                    check=True)
 
 

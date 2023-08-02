@@ -8,10 +8,12 @@ import os
 import platform
 import shutil
 import sys
+import typing
 
 import packaging.requirements
 import packaging.tags
 import packaging.version
+import tomli
 
 
 class Platform(enum.Enum):
@@ -66,28 +68,31 @@ target_py_version: PyVersion = (
     if 'TARGET_PY_VERSION' in os.environ else local_py_version)
 
 
-def init(python_paths: list[os.PathLike] = [],
-         default_tasks: list[str] = []
+def init(python_paths: typing.Iterable[os.PathLike] = [],
+         default_tasks: list[str] = [],
+         verbosity: int = 2
          ) -> dict:
-    python_paths = [str(Path(i).resolve()) for i in python_paths]
-    sys.path = [*python_paths, *sys.path]
-    os.environ['PYTHONPATH'] = os.pathsep.join(
-        (path for path in itertools.chain(python_paths,
-                                          [os.environ.get('PYTHONPATH')])
-         if path))
-
-    num_process = os.environ.get('DOIT_NUM_PROCESS')
-    if num_process:
-        num_process = int(num_process)
-    elif sys.platform in ('darwin', 'win32'):
-        num_process = 0
-    else:
-        num_process = multiprocessing.cpu_count()
-
+    add_python_paths(*python_paths)
     return {'backend': 'sqlite3',
             'default_tasks': default_tasks,
-            'verbosity': 2,
-            'num_process': num_process}
+            'verbosity': verbosity,
+            'num_process': _get_num_process()}
+
+
+def get_conf(path: Path = Path('pyproject.toml')) -> typing.Any:
+    conf_str = path.read_text()
+    return tomli.loads(conf_str)
+
+
+def add_python_paths(*paths: os.PathLike):
+    paths = [str(Path(path).resolve()) for path in paths]
+    if not paths:
+        return
+
+    sys.path = [*paths, *sys.path]
+    os.environ['PYTHONPATH'] = os.pathsep.join(
+        [*paths, os.environ['PYTHONPATH']] if os.environ.get('PYTHONPATH')
+        else paths)
 
 
 def mkdir_p(*paths: os.PathLike):
@@ -129,9 +134,11 @@ def path_rglob(path: Path,
 
 @functools.lru_cache
 def get_version(version_type: VersionType = VersionType.SEMVER,
-                version_path: Path = Path('VERSION')
+                version: str | None = None
                 ) -> str:
-    version = version_path.read_text('utf-8').strip()
+    if version is None:
+        conf = get_conf()
+        version = conf['project']['version']
 
     if version.endswith('dev'):
         version += now.strftime("%Y%m%d")
@@ -143,3 +150,15 @@ def get_version(version_type: VersionType = VersionType.SEMVER,
         return str(packaging.version.Version(version))
 
     raise ValueError()
+
+
+def _get_num_process():
+    num_process = os.environ.get('DOIT_NUM_PROCESS')
+
+    if num_process:
+        return int(num_process)
+
+    if sys.platform in ('darwin', 'win32'):
+        return 0
+
+    return multiprocessing.cpu_count()

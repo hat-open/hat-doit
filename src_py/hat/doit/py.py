@@ -1,90 +1,273 @@
 from pathlib import Path
-from typing import Iterable
+import base64
+import hashlib
 import itertools
+import os
 import subprocess
 import sys
+import typing
+import zipfile
 
+from build import ProjectBuilder
 from packaging.requirements import Requirement
-import setuptools
+import tomli_w
 
 from . import common
 
 
+def get_task_build_wheel(src_dir: Path,
+                         build_dir: Path, *,
+                         file_dep=[],
+                         task_dep=[],
+                         **kwargs):
+
+    def action(whl_dir, whl_name_path, editable):
+        build_wheel(src_dir=src_dir,
+                    build_dir=build_dir,
+                    whl_dir=whl_dir,
+                    whl_name_path=whl_name_path,
+                    editable=editable,
+                    **kwargs)
+
+    return {'actions': [action],
+            'params': [{'name': 'whl_dir',
+                        'long': 'whl-dir',
+                        'type': Path,
+                        'default': None},
+                       {'name': 'whl_name_path',
+                        'long': 'whl-name-path',
+                        'type': Path,
+                        'default': None},
+                       {'name': 'editable',
+                        'long': 'editable',
+                        'type': bool,
+                        'default': False}],
+            'file_dep': file_dep,
+            'task_dep': task_dep}
+
+
 def build_wheel(src_dir: Path,
-                dst_dir: Path,
-                name: str,
-                description: str,
-                url: str,
-                license: common.License,
-                packages: list[str] = None,
-                src_paths: Iterable[Path] | None = None,
-                version_path: Path = Path('VERSION'),
-                readme_path: Path = Path('README.rst'),
-                license_path: Path | None = Path('LICENSE'),
-                requirements_path: Path | None = Path('requirements.pip.runtime.txt'),  # NOQA
-                py_versions: Iterable[common.PyVersion] = common.PyVersion,
+                build_dir: Path, *,
+                name: str | None = None,
+                version: str | None = None,
+                description: str | None = None,
+                readme_path: Path | None = None,
+                requires_python: str | None = None,
+                license: common.License | None = None,
+                authors: list[dict[str, str]] | None = None,
+                maintainers: list[dict[str, str]] | None = None,
+                keywords: list[str] | None = None,
+                classifiers: list[str] | None = None,
+                urls: dict[str, str] | None = None,
+                scripts: dict[str, str] | None = None,
+                gui_scripts: dict[str, str] | None = None,
+                dependencies: list[str] | None = None,
+                optional_dependencies: dict[str, list[str]] | None = None,
+                whl_dir: Path | None = None,
+                whl_name_path: Path | None = None,
+                editable: bool = False,
+                src_paths: typing.Iterable[Path] | None = None,
+                packages: list[str] | None = None,
+                py_versions: typing.Iterable[common.PyVersion] = common.PyVersion,  # NOQA
                 py_limited_api: common.PyVersion | None = None,
                 platform: common.Platform | None = None,
-                console_scripts: list[str] = [],
-                gui_scripts: list[str] = [],
-                zip_safe: bool = True,
                 has_ext_modules: bool = False,
                 has_c_libraries: bool = False):
-    common.rm_rf(dst_dir)
-    common.mkdir_p(dst_dir)
+    src_license_path = Path('LICENSE')
+    dst_conf_path = build_dir / 'pyproject.toml'
+    dst_manifest_path = build_dir / 'MANIFEST.in'
+    dst_setup_path = build_dir / 'setup.py'
+    dst_license_path = build_dir / 'LICENSE'
 
-    if src_paths is None:
-        src_paths = [src_dir]
-    src_paths = itertools.chain.from_iterable(
-        (common.path_rglob(src_path, blacklist={'__pycache__'})
-         if src_path.is_dir() else [src_path])
-        for src_path in src_paths)
+    src_conf = common.get_conf()
+    src_project_conf = src_conf.get('project', {})
+
+    dst_conf = {'project': {},
+                'build-system': {'requires': ['setuptools', 'wheel'],
+                                 'build-backend': 'setuptools.build_meta'},
+                'tool': {'setuptools': {}}}
+    dst_project_conf = dst_conf['project']
+    dst_tool_conf = dst_conf['tool']['setuptools']
+
+    if name is not None:
+        dst_project_conf['name'] = name
+    elif 'name' in src_project_conf:
+        dst_project_conf['name'] = src_project_conf['name']
+    else:
+        Exception('name not provided')
+
+    dst_project_conf['version'] = common.get_version(common.VersionType.PIP,
+                                                     version)
+
+    if description is not None:
+        dst_project_conf['description'] = description
+    elif 'description' in src_project_conf:
+        dst_project_conf['description'] = src_project_conf['description']
+
+    if readme_path is not None:
+        dst_project_conf['readme'] = str(readme_path)
+    elif 'readme' in src_project_conf:
+        dst_project_conf['readme'] = src_project_conf['readme']
+
+    if requires_python is not None:
+        dst_project_conf['requires-python'] = requires_python
+    elif 'requires-python' in src_project_conf:
+        dst_project_conf['requires-python'] = \
+            src_project_conf['requires-python']
+
+    if license is not None:
+        dst_project_conf['license'] = {'text': license.value}
+    elif 'license' in src_project_conf:
+        license = (common.License(src_project_conf['license']['text'])
+                   if 'text' in src_project_conf['license'] else
+                   common.License.PROPRIETARY)
+        dst_project_conf['license'] = src_project_conf['license']
+    else:
+        license = common.License.PROPRIETARY
+        dst_project_conf['license'] = {'text': license.value}
+
+    if authors is not None:
+        dst_project_conf['authors'] = authors
+    elif 'authors' in src_project_conf:
+        dst_project_conf['authors'] = src_project_conf['authors']
+
+    if maintainers is not None:
+        dst_project_conf['maintainers'] = maintainers
+    elif 'maintainers' in src_project_conf:
+        dst_project_conf['maintainers'] = src_project_conf['maintainers']
+
+    if keywords is not None:
+        dst_project_conf['keywords'] = keywords
+    elif 'keywords' in src_project_conf:
+        dst_project_conf['keywords'] = src_project_conf['keywords']
+
+    if classifiers is not None:
+        dst_project_conf['classifiers'] = classifiers
+    elif 'classifiers' in src_project_conf:
+        dst_project_conf['classifiers'] = src_project_conf['classifiers']
+    else:
+        dst_project_conf['classifiers'] = [
+            'Programming Language :: Python :: 3',
+            _get_wheel_license_classifier(license)]
+
+    if urls is not None:
+        dst_project_conf['urls'] = urls
+    elif 'urls' in src_project_conf:
+        dst_project_conf['urls'] = src_project_conf['urls']
+
+    if scripts is not None:
+        dst_project_conf['scripts'] = scripts
+    elif 'scripts' in src_project_conf:
+        dst_project_conf['scripts'] = src_project_conf['scripts']
+
+    if gui_scripts is not None:
+        dst_project_conf['gui-scripts'] = gui_scripts
+    elif 'gui-scripts' in src_project_conf:
+        dst_project_conf['gui-scripts'] = src_project_conf['gui-scripts']
+
+    if dependencies is not None:
+        dst_project_conf['dependencies'] = dependencies
+    elif 'dependencies' in src_project_conf:
+        dst_project_conf['dependencies'] = src_project_conf['dependencies']
+
+    if optional_dependencies is not None:
+        dst_project_conf['optional-dependencies'] = optional_dependencies
+    elif 'optional-dependencies' in src_project_conf:
+        dst_project_conf['optional-dependencies'] = \
+            src_project_conf['optional-dependencies']
+
+    common.rm_rf(build_dir)
+    common.mkdir_p(build_dir)
+
+    if whl_dir is None:
+        whl_dir = build_dir / 'dist'
+
+    if editable:
+        pth_path = build_dir / f"{dst_project_conf['name']}.pth"
+        src_dir_repr = repr(str(src_dir.resolve()))
+        pth_path.write_text(
+            f"import sys; "
+            f"sys.path = [{src_dir_repr}, "
+            f"*(i for i in sys.path if i != {src_dir_repr})]\n")
+
+        dst_manifest_path.write_text(f"include {pth_path.name}\n")
+
+    else:
+        if src_paths is None:
+            src_paths = [src_dir]
+        src_paths = itertools.chain.from_iterable(
+            (common.path_rglob(src_path, blacklist={'__pycache__'})
+             if src_path.is_dir() else [src_path])
+            for src_path in src_paths)
+
+        with open(dst_manifest_path, 'w', encoding='utf-8') as f:
+            for src_path in src_paths:
+                dst_path = build_dir / src_path.relative_to(src_dir)
+                common.mkdir_p(dst_path.parent)
+                common.cp_r(src_path, dst_path)
+                f.write(f"include {dst_path.relative_to(build_dir)}\n")
+
+        # if packages is None:
+        #     packages = setuptools.find_namespace_packages(dst_dir)
+
+        if packages is not None:
+            dst_tool_conf['packages'] = packages
 
     is_pure = not (has_ext_modules or has_c_libraries)
     python_tag = _get_python_tag(py_versions)
     abi_tag = _get_abi_tag(is_pure, py_limited_api, py_versions)
     platform_tag = _get_platform_tag(platform)
+    setup_str = _wheel_setup_py.format(python_tag=repr(python_tag),
+                                       abi_tag=repr(abi_tag),
+                                       platform_tag=repr(platform_tag),
+                                       has_ext_modules=repr(has_ext_modules),
+                                       has_c_libraries=repr(has_c_libraries))
+    dst_setup_path.write_text(setup_str, encoding='utf-8')
 
-    with open(dst_dir / 'MANIFEST.in', 'w', encoding='utf-8') as f:
-        for src_path in src_paths:
-            dst_path = dst_dir / src_path.relative_to(src_dir)
-            common.mkdir_p(dst_path.parent)
-            common.cp_r(src_path, dst_path)
-            f.write(f"include {dst_path.relative_to(dst_dir)}\n")
+    if 'readme' in dst_project_conf:
+        common.cp_r(Path(dst_project_conf['readme']),
+                    build_dir / dst_project_conf['readme'])
 
-    if packages is None:
-        packages = setuptools.find_namespace_packages(dst_dir)
+    if 'file' in dst_project_conf['license']:
+        common.cp_r(Path(dst_project_conf['license']['file']),
+                    build_dir / dst_project_conf['license']['file'])
+    elif src_license_path.exists():
+        common.cp_r(src_license_path, dst_license_path)
 
-    (dst_dir / 'setup.py').write_text(_wheel_setup_py.format(
-        name=repr(name),
-        version=repr(common.get_version(version_type=common.VersionType.PIP,
-                                        version_path=version_path)),
-        description=repr(description),
-        readme=repr(readme_path.read_text('utf-8').strip()),
-        url=repr(url),
-        license=repr(license.value),
-        license_classifier=repr(_get_wheel_license_classifier(license)),
-        packages=repr(packages),
-        zip_safe=repr(zip_safe),
-        requirements=repr([str(i)
-                           for i in read_pip_requirements(requirements_path)]
-                          if requirements_path else []),
-        python_tag=repr(python_tag),
-        abi_tag=repr(abi_tag),
-        platform_tag=repr(platform_tag),
-        console_scripts=repr(console_scripts),
-        gui_scripts=repr(gui_scripts),
-        has_ext_modules=repr(has_ext_modules),
-        has_c_libraries=repr(has_c_libraries)), encoding='utf-8')
+    dst_conf_path.write_text(tomli_w.dumps(dst_conf), encoding='utf-8')
 
-    if license_path:
-        common.cp_r(license_path, dst_dir / 'LICENSE')
+    builder = ProjectBuilder(build_dir, runner=_build_runner)
+    whl_path = builder.build('wheel', whl_dir.resolve())
+    whl_path = Path(whl_path)
 
-    subprocess.run([sys.executable, '-m', 'build', '--wheel',
-                    '--no-isolation'],
-                   stdout=subprocess.DEVNULL,
-                   cwd=str(dst_dir),
-                   check=True)
+    if editable:
+        tmp_whl_path = whl_path.with_suffix('.tmp')
+
+        pth_bytes = pth_path.read_bytes()
+        pth_sha256 = hashlib.sha256(pth_bytes).digest()
+        pth_sha256_b64 = base64.urlsafe_b64encode(pth_sha256).rstrip(b'=')
+        pth_sha256_b64_str = pth_sha256_b64.decode()
+        pth_size = len(pth_bytes)
+        pth_record = (f"{pth_path.name},"
+                      f"sha256={pth_sha256_b64_str},"
+                      f"{pth_size}\n")
+
+        with zipfile.ZipFile(whl_path, "r") as whl:
+            with zipfile.ZipFile(tmp_whl_path, "w") as tmp_whl:
+                for i in whl.namelist():
+                    data = whl.read(i)
+                    if i.endswith('.dist-info/RECORD'):
+                        data += pth_record.encode('utf-8')
+
+                    tmp_whl.writestr(i, data)
+
+                tmp_whl.write(pth_path, pth_path.name)
+
+        whl_path.unlink()
+        tmp_whl_path.rename(whl_path)
+
+    if whl_name_path is not None:
+        whl_name_path.write_text(whl_path.name)
 
 
 def run_pytest(pytest_dir: Path, *args: str):
@@ -99,7 +282,15 @@ def run_flake8(path: Path):
                    check=True)
 
 
-def read_pip_requirements(path: Path) -> Iterable[Requirement]:
+def run_pip_compile(dst_path: Path,
+                    src_path: Path = Path('pyproject.toml')):
+    subprocess.run([sys.executable, '-m', 'piptools', 'compile',
+                    '--no-emit-index-url', '-o', str(dst_path), str(src_path)],
+                   stderr=subprocess.DEVNULL,
+                   check=True)
+
+
+def read_pip_requirements(path: Path) -> typing.Iterable[Requirement]:
     # TODO: implement full format
     #       https://pip.pypa.io/en/stable/cli/pip_install/
     for i in Path(path).read_text('utf-8').split('\n'):
@@ -123,6 +314,14 @@ def get_py_versions(py_limited_api: common.PyVersion | None
     return [version for version in common.PyVersion
             if version.value[0] == py_limited_api.value[0] and
             version.value >= py_limited_api.value]
+
+
+def _build_runner(cmd, cwd, extra_environ):
+    subprocess.run(cmd,
+                   stdout=subprocess.DEVNULL,
+                   cwd=cwd,
+                   env={**os.environ, **extra_environ},
+                   check=True)
 
 
 def _get_wheel_license_classifier(license):
@@ -187,21 +386,9 @@ import setuptools
 import wheel.bdist_wheel
 
 
-name = {name}
-version = {version}
-description = {description}
-readme = {readme}
-url = {url}
-license = {license}
-license_classifier = {license_classifier}
-packages = {packages}
-zip_safe = {zip_safe}
-requirements = {requirements}
 python_tag = {python_tag}
 abi_tag = {abi_tag}
 platform_tag = {platform_tag}
-console_scripts = {console_scripts}
-gui_scripts = {gui_scripts}
 has_ext_modules = {has_ext_modules}
 has_c_libraries = {has_c_libraries}
 
@@ -223,32 +410,17 @@ class Distribution(setuptools.Distribution):
         return has_c_libraries
 
 
-setuptools.setup(
-    distclass=Distribution,
-    name=name,
-    version=version,
-    description=description,
-    long_description=readme,
-    long_description_content_type='text/x-rst',
-    url=url,
-    license=license,
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        license_classifier],
-    packages=packages,
-    include_package_data=True,
-    zip_safe=zip_safe,
-    install_requires=requirements,
-    python_requires='>=3.10',
-    options={{
+setup_args = {{
+    'distclass': Distribution,
+    'options': {{
         'bdist_wheel': {{
             'python_tag': python_tag,
             'py_limited_api': python_tag,
             'plat_name': platform_tag
         }}
     }},
-    entry_points={{
-        'console_scripts': console_scripts,
-        'gui_scripts': gui_scripts
-    }})
+}}
+
+
+setuptools.setup(**setup_args)
 """

@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Any, Iterable
 import enum
 import importlib.resources
 import json
 import subprocess
 import sys
 import tempfile
+import typing
 
 import sphinx.application
 
@@ -22,14 +22,13 @@ def build_sphinx(src_dir: Path,
                  dst_dir: Path,
                  project: str,
                  out_type: SphinxOutputType = SphinxOutputType.HTML,
-                 extensions: Iterable[str] = [],
-                 version_path: Path = Path('VERSION'),
+                 extensions: typing.Iterable[str] = [],
+                 version: str | None = None,
                  copyright: str = '2020-2023, Hat Open AUTHORS',
-                 static_paths: Iterable[Path] = [],
-                 conf: dict[str, Any] = {}):
+                 static_paths: typing.Iterable[Path] = [],
+                 conf: dict[str, typing.Any] = {}):
     common.mkdir_p(dst_dir)
-    version = common.get_version(version_type=common.VersionType.PIP,
-                                 version_path=version_path)
+    version = common.get_version(common.VersionType.PIP, version)
 
     package = importlib.resources.files(hat_doit_sphinx)
     with importlib.resources.as_file(package / 'static') as static_path:
@@ -62,13 +61,19 @@ def build_sphinx(src_dir: Path,
         app.build()
 
 
-def build_latex(src: Path, dest: Path, n_passes: int = 1):
-    common.mkdir_p(dest)
+def build_latex(src_dir: Path,
+                dst_dir: Path,
+                n_passes: int = 1):
+    common.mkdir_p(dst_dir)
     for _ in range(n_passes):
-        for i in src.glob('*.tex'):
-            subprocess.run(['xelatex', '-interaction=batchmode',
-                            f'-output-directory={dest.resolve()}', i.name],
-                           cwd=src, stdout=subprocess.DEVNULL, check=True)
+        for i in src_dir.glob('*.tex'):
+            subprocess.run(['xelatex',
+                            '-interaction=batchmode',
+                            f'-output-directory={dst_dir.resolve()}',
+                            i.name],
+                           cwd=src_dir,
+                           stdout=subprocess.DEVNULL,
+                           check=True)
 
 
 def build_pdoc(module: str,
@@ -85,24 +90,24 @@ def build_pdoc(module: str,
                    check=True)
 
 
-def build_jsdoc(src: Path,
-                dest: Path,
+def build_jsdoc(src_dir: Path,
+                dst_dir: Path,
                 node_modules_dir: Path = Path('node_modules'),
                 template: str = 'node_modules/docdash'):
-    common.mkdir_p(dest)
+    common.mkdir_p(dst_dir)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         conf_path = tmpdir / 'jsdoc.json'
         conf_path.write_text(json.dumps({
             "source": {
-                "include": str(src)
+                "include": str(src_dir)
             },
             "plugins": [
                 "plugins/markdown"
             ],
             "opts": {
                 "template": template,
-                "destination": str(dest),
+                "destination": str(dst_dir),
                 "recurse": True
             },
             "templates": {

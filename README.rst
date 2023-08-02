@@ -31,12 +31,12 @@ Install
 Build
 -----
 
-Build tool used for `hat-doit` is pydoit. It can be installed together with
-other python dependencies by running::
+To install python dependencies and editable installation, run::
 
-    $ pip install -r requirements.pip.dev.txt
+    $ pip install -e .
 
-For listing available doit tasks, use::
+Build tool used for `hat-doit` is pydoit (installed with other python
+dependencies). For listing available doit tasks, use::
 
     $ doit list
 
