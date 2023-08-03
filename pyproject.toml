@@ -1,6 +1,6 @@
 [project]
 name = "hat-doit"
-version = "0.14.1"
+version = "0.14.2"
 description = "Hat build utility functions"
 readme = "README.rst"
 requires-python = ">=3.10"
@@ -33,10 +33,7 @@ Repository = "https://github.com/hat-open/hat-doit.git"
 build-backend = "hat.doit.pep517"
 backend-path = ["src_py"]
 requires = [
-    "build",
     "doit",
-    "setuptools",
-    "tomli",
-    "tomli_w",
-    "wheel",
+    "packaging",
+    "tomli"
 ]

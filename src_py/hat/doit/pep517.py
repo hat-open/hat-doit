@@ -27,11 +27,11 @@ def build_sdist(sdist_directory, config_settings=None):
 
 
 def get_requires_for_build_wheel(config_settings=None):
-    conf = common.get_conf()
-    project_conf = conf.get('project', {})
+    return _get_requires()
 
-    return [*project_conf.get('dependencies', []),
-            *project_conf.get('optional-dependencies', {}).get('dev', [])]
+
+def get_requires_for_build_editable(config_settings=None):
+    return _get_requires()
 
 
 def _build_wheel(whl_dir, editable):
@@ -52,3 +52,11 @@ def _build_wheel(whl_dir, editable):
                    env=env,
                    check=True)
     return whl_name_path.read_text()
+
+
+def _get_requires():
+    conf = common.get_conf()
+    project_conf = conf.get('project', {})
+
+    return [*project_conf.get('dependencies', []),
+            *project_conf.get('optional-dependencies', {}).get('dev', [])]
