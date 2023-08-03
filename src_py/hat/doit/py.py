@@ -58,7 +58,13 @@ def get_task_run_pytest(args=[],
 
 
 def get_task_run_pip_compile(dst_path: Path = Path('requirements.pip.txt')):
-    return {'actions': [(run_pip_compile, [dst_path])]}
+
+    def action(args):
+        run_pip_compile(dst_path,
+                        args=args or [])
+
+    return {'actions': [action],
+            'pos_arg': 'args'}
 
 
 def build_wheel(src_dir: Path,
@@ -296,8 +302,9 @@ def run_flake8(path: Path):
                    check=True)
 
 
-def run_pip_compile(dst_path: Path,
+def run_pip_compile(dst_path: Path, *,
                     extras: list[str] | None = None,
+                    args: list[str] = [],
                     src_path: Path = Path('pyproject.toml')):
     extras = (['--all-extras'] if extras is None else
               itertools.chain.from_iterable(('--extra', i) for i in extras))
@@ -311,6 +318,7 @@ def run_pip_compile(dst_path: Path,
                     '--no-emit-index-url',
                     '-o', str(dst_path),
                     *extras,
+                    *args,
                     str(src_path)],
                    check=True)
 
