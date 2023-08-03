@@ -31,12 +31,16 @@ Install
 Build
 -----
 
-To install python dependencies and editable installation, run::
+To install editable installation, together with python dependencies, run::
 
     $ pip install -e .
 
-Build tool used for `hat-doit` is pydoit (installed with other python
-dependencies). For listing available doit tasks, use::
+To install only python dependencies, run::
+
+    $ pip install -r requirements.pip.txt
+
+Build tool used for `hat-doit` is pydoit. For listing available doit tasks,
+use::
 
     $ doit list
 

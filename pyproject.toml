@@ -1,13 +1,12 @@
 [project]
 name = "hat-doit"
-version = "0.14.2"
+version = "0.14.3"
 description = "Hat build utility functions"
 readme = "README.rst"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 dependencies = [
     "build >=0.10.0",
-    "coverage[toml]; python_version < '3.10'",
     "doit >=0.36.0",
     "flake8 >=6.1.0",
     "furo >=2023.7.26",
