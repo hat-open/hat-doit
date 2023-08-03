@@ -46,6 +46,17 @@ def get_task_build_wheel(src_dir: Path,
             'task_dep': task_dep}
 
 
+def get_task_run_pytest(args=[],
+                        file_dep=[],
+                        task_dep=[]):
+
+    def action(cmd_args):
+        run_pytest(*itertools.chain(args, cmd_args or []))
+
+    return {'actions': [action],
+            'pos_arg': 'cmd_args'}
+
+
 def build_wheel(src_dir: Path,
                 build_dir: Path, *,
                 name: str | None = None,
@@ -270,10 +281,9 @@ def build_wheel(src_dir: Path,
         whl_name_path.write_text(whl_path.name)
 
 
-def run_pytest(pytest_dir: Path, *args: str):
+def run_pytest(*args: str):
     subprocess.run([sys.executable, '-m', 'pytest',
                     '-s', '-p', 'no:cacheprovider', *args],
-                   cwd=str(pytest_dir),
                    check=True)
 
 
