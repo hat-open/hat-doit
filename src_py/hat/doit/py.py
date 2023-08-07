@@ -293,7 +293,10 @@ def build_wheel(src_dir: Path,
 
 def run_pytest(*args: str):
     subprocess.run([sys.executable, '-m', 'pytest',
-                    '-s', '-p', 'no:cacheprovider', *args],
+                    '--capture', 'no',
+                    '-p', 'hat.doit.pytest',
+                    '-p', 'no:cacheprovider',
+                    *args],
                    check=True)
 
 

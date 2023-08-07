@@ -3,3 +3,6 @@ properties:
     build_wheel_task:
         type: string
         default: build
+    pytest_profile_dir:
+        type: string
+        default: '.profile'
