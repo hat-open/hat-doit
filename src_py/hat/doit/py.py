@@ -54,7 +54,9 @@ def get_task_run_pytest(args=[],
         run_pytest(*itertools.chain(args, cmd_args or []))
 
     return {'actions': [action],
-            'pos_arg': 'cmd_args'}
+            'pos_arg': 'cmd_args',
+            'file_dep': file_dep,
+            'task_dep': task_dep}
 
 
 def get_task_run_pip_compile(dst_path: Path = Path('requirements.pip.txt')):
