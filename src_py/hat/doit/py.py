@@ -1,7 +1,10 @@
 from pathlib import Path
+import collections
 import itertools
+import json
 import subprocess
 import sys
+import tempfile
 import typing
 
 import mkwhl
@@ -14,7 +17,8 @@ def get_task_build_wheel(src_dir: Path,
                          *,
                          file_dep=[],
                          task_dep=[],
-                         **kwargs):
+                         **kwargs
+                         ) -> dict:
 
     def action(whl_dir, whl_name_path, editable):
         build_wheel(src_dir=src_dir,
@@ -41,8 +45,10 @@ def get_task_build_wheel(src_dir: Path,
 
 
 def get_task_run_pytest(args=[],
+                        *,
                         file_dep=[],
-                        task_dep=[]):
+                        task_dep=[]
+                        ) -> dict:
 
     def action(cmd_args):
         run_pytest(*itertools.chain(args, cmd_args or []))
@@ -53,14 +59,26 @@ def get_task_run_pytest(args=[],
             'task_dep': task_dep}
 
 
-def get_task_run_pip_compile(dst_path: Path = Path('requirements.pip.txt')):
+def get_task_create_pip_requirements(dst_path: Path = Path('requirements.pip.txt'),  # NOQA
+                                     *,
+                                     freeze: bool = False,
+                                     src_path: Path = Path('pyproject.toml'),
+                                     file_dep=[],
+                                     task_dep=[],
+                                     **kwargs
+                                     ) -> dict:
 
-    def action(args):
-        run_pip_compile(dst_path,
-                        args=args or [])
+    def action():
+        create_pip_requirements(dst_path,
+                                freeze=freeze,
+                                src_path=src_path,
+                                **kwargs)
 
     return {'actions': [action],
-            'pos_arg': 'args'}
+            'file_dep': [src_path, *file_dep],
+            'task_dep': task_dep,
+            'targets': [dst_path],
+            **({'uptodate': [False]} if freeze else {})}
 
 
 def build_wheel(src_dir: Path,
@@ -102,25 +120,42 @@ def run_flake8(path: Path):
                    check=True)
 
 
-def run_pip_compile(dst_path: Path, *,
-                    extras: list[str] | None = None,
-                    args: list[str] = [],
-                    src_path: Path = Path('pyproject.toml')):
-    extras = (['--all-extras'] if extras is None else
-              itertools.chain.from_iterable(('--extra', i) for i in extras))
+def create_pip_requirements(dst_path: Path,
+                            *,
+                            freeze: bool = False,
+                            extras: list[str] | None = None,
+                            src_path: Path = Path('pyproject.toml')):
+    project_conf = common.get_conf(src_path).get('project', {})
 
-    conf = common.get_conf(src_path)
-    if not conf.get('project', {}).get('optional-dependencies'):
-        extras = []
+    dependencies = collections.deque(project_conf.get('dependencies'))
+    for k, v in project_conf.get('optional-dependencies', {}).items():
+        if extras is None or k in extras:
+            dependencies.extend(v)
 
-    subprocess.run([sys.executable, '-m', 'piptools', 'compile',
-                    '--quiet',
-                    '--no-emit-index-url',
-                    '-o', str(dst_path),
-                    *extras,
-                    *args,
-                    str(src_path)],
-                   check=True)
+    if freeze:
+        # TODO alternative implementation
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            requirements_path = Path(tmp_dir) / 'requirements.txt'
+            report_path = Path(tmp_dir) / 'report.json'
+
+            requirements_path.write_text(
+                ''.join(f"{i}\n" for i in dependencies))
+
+            # TODO platform and constaints
+            subprocess.run([sys.executable, '-m', 'pip', '--quiet',
+                            'install', '--dry-run', '--ignore-installed',
+                            '--quiet', '--report', str(report_path),
+                            '-r', str(requirements_path)],
+                           check=True)
+
+            report = json.loads(report_path.read_text())
+
+        # TODO fix
+        dependencies = [f"{i['metadata']['name']}=={i['metadata']['version']}"
+                        for i in report.get('install', [])]
+
+    dependencies = sorted(dependencies)
+    dst_path.write_text(''.join(f"{i}\n" for i in dependencies))
 
 
 def get_py_versions(py_limited_api: common.PyVersion | None
