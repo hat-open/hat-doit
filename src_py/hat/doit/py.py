@@ -127,7 +127,7 @@ def create_pip_requirements(dst_path: Path,
                             src_path: Path = Path('pyproject.toml')):
     project_conf = common.get_conf(src_path).get('project', {})
 
-    dependencies = collections.deque(project_conf.get('dependencies'))
+    dependencies = collections.deque(project_conf.get('dependencies', []))
     for k, v in project_conf.get('optional-dependencies', {}).items():
         if extras is None or k in extras:
             dependencies.extend(v)
