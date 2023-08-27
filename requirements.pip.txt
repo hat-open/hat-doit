@@ -11,18 +11,16 @@ babel==2.12.1
 beautifulsoup4==4.12.2
     # via furo
 build==0.10.0
-    # via
-    #   hat-doit (pyproject.toml)
-    #   pip-tools
+    # via pip-tools
 certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
-click==8.1.6
+click==8.1.7
     # via pip-tools
 cloudpickle==2.2.1
     # via doit
-coverage[toml]==7.2.7
+coverage[toml]==7.3.0
     # via pytest-cov
 docutils==0.20.1
     # via sphinx
@@ -30,7 +28,7 @@ doit==0.36.0
     # via hat-doit (pyproject.toml)
 flake8==6.1.0
     # via hat-doit (pyproject.toml)
-furo==2023.7.26
+furo==2023.8.19
     # via hat-doit (pyproject.toml)
 idna==3.4
     # via requests
@@ -50,23 +48,26 @@ markupsafe==2.1.3
     #   pdoc
 mccabe==0.7.0
     # via flake8
+mkwhl==0.2.3
+    # via hat-doit (pyproject.toml)
 packaging==23.1
     # via
     #   build
     #   hat-doit (pyproject.toml)
+    #   mkwhl
     #   pytest
     #   sphinx
 pdoc==14.0.0
     # via hat-doit (pyproject.toml)
-pip-tools==7.2.0
+pip-tools==7.3.0
     # via hat-doit (pyproject.toml)
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 pycodestyle==2.11.0
     # via flake8
 pyflakes==3.1.0
     # via flake8
-pygments==2.15.1
+pygments==2.16.1
     # via
     #   furo
     #   pdoc
@@ -91,35 +92,36 @@ snowballstemmer==2.2.0
     # via sphinx
 soupsieve==2.4.1
     # via beautifulsoup4
-sphinx==7.1.2
+sphinx==7.2.3
     # via
     #   furo
     #   hat-doit (pyproject.toml)
     #   sphinx-basic-ng
+    #   sphinxcontrib-applehelp
+    #   sphinxcontrib-devhelp
+    #   sphinxcontrib-htmlhelp
+    #   sphinxcontrib-qthelp
+    #   sphinxcontrib-serializinghtml
 sphinx-basic-ng==1.0.0b2
     # via furo
-sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-applehelp==1.0.7
     # via sphinx
-sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-devhelp==1.0.5
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-htmlhelp==2.0.4
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-qthelp==1.0.6
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.5
+sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
 tomli==2.0.1
     # via hat-doit (pyproject.toml)
-tomli-w==1.0.0
-    # via hat-doit (pyproject.toml)
 urllib3==2.0.4
     # via requests
-wheel==0.41.0
-    # via
-    #   hat-doit (pyproject.toml)
-    #   pip-tools
+wheel==0.41.2
+    # via pip-tools
 zipp==3.16.2
     # via importlib-metadata
 

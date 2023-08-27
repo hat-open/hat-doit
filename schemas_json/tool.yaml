@@ -1,8 +1,9 @@
-id: "hat-doit://pep517.yaml#"
+id: "hat-doit://tool.yaml#"
+type: object
 properties:
     build_wheel_task:
         type: string
         default: build
     pytest_profile_dir:
         type: string
-        default: '.profile'
+        default: 'build/profile'

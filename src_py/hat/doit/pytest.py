@@ -12,7 +12,7 @@ from . import common
 
 tool_conf = common.get_conf().get('tool', {}).get('hat-doit', {})
 durations = collections.deque()
-profile_dir = Path(tool_conf.get('pytest_profile_dir', '.profile'))
+profile_dir = Path(tool_conf.get('pytest_profile_dir', 'build/profile'))
 
 
 def pytest_addoption(parser):

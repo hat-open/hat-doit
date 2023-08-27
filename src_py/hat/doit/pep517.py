@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 import subprocess
 import sys
 
@@ -40,16 +39,11 @@ def _build_wheel(whl_dir, editable):
 
     task = tool_conf.get('build_wheel_task', 'build')
 
-    env = {k: v
-           for k, v in os.environ.items()
-           if not k.startswith('PEP517_')}
-
     whl_name_path = whl_dir / 'wheel_name'
     subprocess.run([sys.executable, '-m', 'doit', task,
                     '--whl-dir', str(whl_dir),
                     '--whl-name-path', str(whl_name_path),
                     *(['--editable'] if editable else [])],
-                   env=env,
                    check=True)
     return whl_name_path.read_text()
 
