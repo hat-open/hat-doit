@@ -167,8 +167,7 @@ def get_task_json_schema_repo(src_paths: typing.Iterable[Path],
         data = repo.to_json()
         hat.json.encode_file(data, dst_path, indent=None)
 
-    return {'name': str(dst_path),
-            'actions': [generate],
+    return {'actions': [generate],
             'file_dep': [*src_paths, *file_dep],
             'task_dep': task_dep,
             'targets': [dst_path]}
@@ -190,8 +189,7 @@ def get_task_sbs_repo(src_paths: typing.Iterable[Path],
         data = repo.to_json()
         hat.json.encode_file(data, dst_path, indent=None)
 
-    return {'name': str(dst_path),
-            'actions': [generate],
+    return {'actions': [generate],
             'file_dep': [*src_paths, *file_dep],
             'task_dep': task_dep,
             'targets': [dst_path]}
