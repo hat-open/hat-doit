@@ -1,6 +1,6 @@
 [project]
 name = "hat-doit"
-version = "0.15.5"
+version = "0.15.6"
 description = "Hat build utility functions"
 readme = "README.rst"
 requires-python = ">=3.10"
@@ -11,7 +11,7 @@ dependencies = [
     "furo >=2023.9.10",
     "mkwhl ~=0.3.0",
     "packaging >=23.1",
-    "pdoc >=14.1.0",
+    "pdoc >=14.2.0",
     "pytest >=7.4.3",
     "pytest-asyncio >=0.21.1",
     "pytest-cov >=4.1.0",

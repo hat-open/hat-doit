@@ -152,6 +152,51 @@ def get_version(version_type: VersionType = VersionType.SEMVER,
     raise ValueError()
 
 
+def get_task_json_schema_repo(src_paths: typing.Iterable[Path],
+                              dst_path: Path,
+                              *,
+                              file_dep=[],
+                              task_dep=[]
+                              ) -> dict:
+    import hat.json
+
+    src_paths = list(src_paths)
+
+    def generate():
+        repo = hat.json.SchemaRepository(*src_paths)
+        data = repo.to_json()
+        hat.json.encode_file(data, dst_path, indent=None)
+
+    return {'name': str(dst_path),
+            'actions': [generate],
+            'file_dep': [*src_paths, *file_dep],
+            'task_dep': task_dep,
+            'targets': [dst_path]}
+
+
+def get_task_sbs_repo(src_paths: typing.Iterable[Path],
+                      dst_path: Path,
+                      *,
+                      file_dep=[],
+                      task_dep=[]
+                      ) -> dict:
+    import hat.sbs
+    import hat.json
+
+    src_paths = list(src_paths)
+
+    def generate():
+        repo = hat.sbs.Repository(*src_paths)
+        data = repo.to_json()
+        hat.json.encode_file(data, dst_path, indent=None)
+
+    return {'name': str(dst_path),
+            'actions': [generate],
+            'file_dep': [*src_paths, *file_dep],
+            'task_dep': task_dep,
+            'targets': [dst_path]}
+
+
 def _get_num_process():
     num_process = os.environ.get('DOIT_NUM_PROCESS')
 
