@@ -143,8 +143,17 @@ def get_c_flags(platform: common.Platform = common.target_platform
             yield '-march=armv7'
 
 
-def get_ld_flags(platform: common.Platform = common.target_platform
+def get_ld_flags(platform: common.Platform = common.target_platform,
+                 shared: bool = False
                  ) -> Iterable[str]:
+    if shared:
+        if platform == common.Platform.WINDOWS_AMD64:
+            yield '-mdll'
+            yield '-Wl,--export-all'
+
+        else:
+            yield '-shared'
+
     yield from shlex.split(os.environ.get('LDFLAGS', ''))
 
 
@@ -274,7 +283,7 @@ class CBuild:
         yield {'name': str(exe_path),
                'actions': [(common.mkdir_p, [exe_path.parent]),
                            [get_cc(self._platform),
-                            *get_ld_flags(self._platform),
+                            *get_ld_flags(self._platform, False),
                             *self._ld_flags,
                             '-o', str(exe_path),
                             *(str(obj_path) for obj_path in obj_paths),
@@ -286,14 +295,10 @@ class CBuild:
     def get_task_lib(self, lib_path: Path) -> dict:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
-        shared_flag = (
-            '-mdll' if self._platform == common.Platform.WINDOWS_AMD64
-            else '-shared')
         yield {'name': str(lib_path),
                'actions': [(common.mkdir_p, [lib_path.parent]),
                            [get_cc(self._platform),
-                            shared_flag,
-                            *get_ld_flags(self._platform),
+                            *get_ld_flags(self._platform, True),
                             *self._ld_flags,
                             '-o', str(lib_path),
                             *(str(obj_path) for obj_path in obj_paths),
