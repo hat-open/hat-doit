@@ -136,22 +136,11 @@ class ESLintConf(enum.Enum):
 
 
 def run_eslint(path: Path,
-               conf: ESLintConf = ESLintConf.JS,
-               eslint_path: Path = Path('node_modules/.bin/eslint')):
-    if conf == ESLintConf.JS:
-        parser = 'espree'
-
-    elif conf == ESLintConf.TS:
-        parser = '@typescript-eslint/parser'
-
-    else:
-        raise ValueError('unsupported conf')
-
+               conf: ESLintConf = ESLintConf.JS):
     package = importlib.resources.files(hat_doit_eslint)
     with importlib.resources.as_file(package /
                                      f'{conf.value}.yaml') as conf_path:
-        subprocess.run([str(eslint_path),
-                        '--parser', parser,
+        subprocess.run(['npx', 'eslint',
                         '--resolve-plugins-relative-to', '.',
                         '-c', str(conf_path),
                         str(path)],
