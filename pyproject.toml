@@ -1,6 +1,6 @@
 [project]
 name = "hat-doit"
-version = "0.15.9"
+version = "0.15.10"
 description = "Hat build utility functions"
 readme = "README.rst"
 requires-python = ">=3.10"
