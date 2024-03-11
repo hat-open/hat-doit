@@ -38,6 +38,7 @@ def build_npm(src_dir: Path,
               author: dict[str, str] | None = None,
               contributors: list[dict[str, str]] | None = None,
               main: str | None = 'index.js',
+              types: str | None = None,
               browser: str | None = None,
               bin: str | dict[str, str] | None = None,
               man: str | list[str] | None = None,
@@ -87,6 +88,9 @@ def build_npm(src_dir: Path,
 
     if main is not None:
         dst_conf['main'] = main
+
+    if types is not None:
+        dst_conf['types'] = types
 
     if browser is not None:
         dst_conf['browser'] = browser
