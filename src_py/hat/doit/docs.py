@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 import enum
 import importlib.resources
@@ -22,10 +23,10 @@ def build_sphinx(src_dir: Path,
                  dst_dir: Path,
                  project: str,
                  out_type: SphinxOutputType = SphinxOutputType.HTML,
-                 extensions: typing.Iterable[str] = [],
+                 extensions: Iterable[str] = [],
                  version: str | None = None,
                  copyright: str = '2020-2023, Hat Open AUTHORS',
-                 static_paths: typing.Iterable[Path] = [],
+                 static_paths: Iterable[Path] = [],
                  conf: dict[str, typing.Any] = {}):
     common.mkdir_p(dst_dir)
     version = common.get_version(common.VersionType.PIP, version)

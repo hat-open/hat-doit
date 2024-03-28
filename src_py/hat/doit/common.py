@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 import datetime
 import enum
@@ -9,11 +10,14 @@ import platform
 import shutil
 import sys
 import typing
+import threading
 
 import packaging.requirements
 import packaging.tags
 import packaging.version
 import tomli
+import watchdog.events
+import watchdog.observers
 
 
 class Platform(enum.Enum):
@@ -69,7 +73,7 @@ target_py_version: PyVersion = (
     if 'TARGET_PY_VERSION' in os.environ else local_py_version)
 
 
-def init(python_paths: typing.Iterable[os.PathLike] = [],
+def init(python_paths: Iterable[os.PathLike] = [],
          default_tasks: list[str] = [],
          verbosity: int = 2
          ) -> dict:
@@ -153,7 +157,7 @@ def get_version(version_type: VersionType = VersionType.SEMVER,
     raise ValueError()
 
 
-def get_task_json_schema_repo(src_paths: typing.Iterable[Path],
+def get_task_json_schema_repo(src_paths: Iterable[Path],
                               dst_path: Path,
                               *,
                               file_dep=[],
@@ -174,7 +178,7 @@ def get_task_json_schema_repo(src_paths: typing.Iterable[Path],
             'targets': [dst_path]}
 
 
-def get_task_sbs_repo(src_paths: typing.Iterable[Path],
+def get_task_sbs_repo(src_paths: Iterable[Path],
                       dst_path: Path,
                       *,
                       file_dep=[],
@@ -194,6 +198,44 @@ def get_task_sbs_repo(src_paths: typing.Iterable[Path],
             'file_dep': [*src_paths, *file_dep],
             'task_dep': task_dep,
             'targets': [dst_path]}
+
+
+def get_task_copy(src_dst_paths: Iterable[tuple[Path, Path]],
+                  *,
+                  task_dep=[]
+                  ) -> dict:
+
+    class Handler(watchdog.events.FileSystemEventHandler):
+
+        def __init__(self, src_path, dst_path):
+            self._src_path = src_path
+            self._dst_path = dst_path
+
+        def on_any_event(self, event):
+            cp_r(self._src_path, self._dst_path)
+
+    def action(watch):
+        observer = watchdog.observers.Observer() if watch else None
+
+        for src_path, dst_path in src_dst_paths:
+            cp_r(src_path, dst_path)
+
+            if observer:
+                observer.schedule(Handler(src_path, dst_path), src_path,
+                                  recursive=True)
+
+        if observer:
+            observer.start()
+            threading.Event().wait()
+            # observer.stop()
+            # observer.join()
+
+    return {'actions': [action],
+            'task_dep': task_dep,
+            'params': [{'name': 'watch',
+                        'long': 'watch',
+                        'type': bool,
+                        'default': False}]}
 
 
 def _get_num_process():

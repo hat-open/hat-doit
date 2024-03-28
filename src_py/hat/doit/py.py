@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 import collections
 import itertools
@@ -5,7 +6,6 @@ import json
 import subprocess
 import sys
 import tempfile
-import typing
 
 import mkwhl
 
@@ -85,7 +85,7 @@ def build_wheel(src_dir: Path,
                 build_dir: Path,
                 *,
                 whl_name_path: Path | None = None,
-                py_versions: typing.Iterable[common.PyVersion] = common.PyVersion,  # NOQA
+                py_versions: Iterable[common.PyVersion] = common.PyVersion,
                 py_limited_api: common.PyVersion | None = None,
                 platform: common.Platform | None = None,
                 is_purelib: bool = True,
