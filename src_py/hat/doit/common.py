@@ -212,6 +212,10 @@ def get_task_copy(src_dst_paths: Iterable[tuple[Path, Path]],
             self._dst_path = dst_path
 
         def on_any_event(self, event):
+            if event.event_type not in {'created', 'deleted', 'modified',
+                                        'moved'}:
+                return
+
             cp_r(self._src_path, self._dst_path)
 
     def action(watch):
