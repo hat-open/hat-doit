@@ -37,6 +37,7 @@ def build_npm(src_dir: Path,
               license: common.License | None = None,
               author: dict[str, str] | None = None,
               contributors: list[dict[str, str]] | None = None,
+              type: str | None = "module",
               main: str | None = 'index.js',
               types: str | None = None,
               browser: str | None = None,
@@ -85,6 +86,9 @@ def build_npm(src_dir: Path,
         contributors = contributors or None
     if contributors is not None:
         dst_conf['contributors'] = contributors
+
+    if type is not None:
+        dst_conf['type'] = type
 
     if main is not None:
         dst_conf['main'] = main
