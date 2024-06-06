@@ -22,7 +22,8 @@ def get_exe_suffix(platform: common.Platform = common.target_platform
                     common.Platform.LINUX_GNU_AARCH64,
                     common.Platform.LINUX_GNU_ARMV7L,
                     common.Platform.LINUX_MUSL_X86_64,
-                    common.Platform.LINUX_MUSL_AARCH64):
+                    common.Platform.LINUX_MUSL_AARCH64,
+                    common.Platform.LINUX_MUSL_ARMV7L):
         return ''
 
     raise ValueError('unsupported platform')
@@ -40,7 +41,8 @@ def get_lib_suffix(platform: common.Platform = common.target_platform
                     common.Platform.LINUX_GNU_AARCH64,
                     common.Platform.LINUX_GNU_ARMV7L,
                     common.Platform.LINUX_MUSL_X86_64,
-                    common.Platform.LINUX_MUSL_AARCH64):
+                    common.Platform.LINUX_MUSL_AARCH64,
+                    common.Platform.LINUX_MUSL_ARMV7L):
         return '.so'
 
     raise ValueError('unsupported platform')
@@ -60,7 +62,8 @@ def get_py_ext_suffix(platform: common.Platform = common.target_platform,
                       common.Platform.LINUX_GNU_AARCH64,
                       common.Platform.LINUX_GNU_ARMV7L,
                       common.Platform.LINUX_MUSL_X86_64,
-                      common.Platform.LINUX_MUSL_AARCH64):
+                      common.Platform.LINUX_MUSL_AARCH64,
+                      common.Platform.LINUX_MUSL_ARMV7L):
         suffix = '.so'
 
     else:
@@ -92,6 +95,10 @@ def get_py_ext_suffix(platform: common.Platform = common.target_platform,
     elif platform == common.Platform.LINUX_MUSL_AARCH64:
         # TODO sysconfig.get_config_var("SOABI") returns gnu
         return f'.cpython-{major}{minor}-aarch64-linux-gnu{suffix}'
+
+    elif platform == common.Platform.LINUX_MUSL_ARMV7L:
+        # TODO sysconfig.get_config_var("SOABI") returns gnu
+        return f'.cpython-{major}{minor}-arm-linux-gnu{suffix}'
 
     raise ValueError('unsupported platform')
 

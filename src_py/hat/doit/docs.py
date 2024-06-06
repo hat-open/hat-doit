@@ -25,7 +25,7 @@ def build_sphinx(src_dir: Path,
                  out_type: SphinxOutputType = SphinxOutputType.HTML,
                  extensions: Iterable[str] = [],
                  version: str | None = None,
-                 copyright: str = '2020-2023, Hat Open AUTHORS',
+                 copyright: str = '2020-2024, Hat Open AUTHORS',
                  static_paths: Iterable[Path] = [],
                  conf: dict[str, typing.Any] = {}):
     common.mkdir_p(dst_dir)

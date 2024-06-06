@@ -28,6 +28,7 @@ class Platform(enum.Enum):
     LINUX_GNU_ARMV7L = ('linux', 'glibc', 'armv7l')
     LINUX_MUSL_X86_64 = ('linux', 'musl', 'x86_64')
     LINUX_MUSL_AARCH64 = ('linux', 'musl', 'aarch64')
+    LINUX_MUSL_ARMV7L = ('linux', 'musl', 'armv7l')
 
 
 class PyVersion(enum.Enum):

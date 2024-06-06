@@ -208,4 +208,7 @@ def _get_platform_tag(platform):
     if platform == common.Platform.LINUX_MUSL_AARCH64:
         return 'musllinux_1_2_aarch64'
 
+    if platform == common.Platform.LINUX_MUSL_ARMV7L:
+        return 'musllinux_1_2_armv7l'
+
     raise NotImplementedError()

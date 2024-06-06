@@ -1,24 +1,24 @@
 [project]
 name = "hat-doit"
-version = "0.15.14"
+version = "0.15.15"
 description = "Hat build utility functions"
 readme = "README.rst"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 dependencies = [
     "doit >=0.36.0",
-    "flake8 >=6.1.0",
-    "furo >=2023.9.10",
+    "flake8 >=7.0.0",
+    "furo >=2024.5.6",
     "mkwhl ~=0.3.1",
-    "packaging >=23.1",
-    "pdoc >=14.2.0",
-    "pytest >=7.4.3",
-    "pytest-asyncio >=0.21.1",
+    "packaging >=24.0",
+    "pdoc >=14.1.0",
+    "pytest >=8.2.2",
+    "pytest-asyncio >=0.23.7",
     "pytest-cov >=4.1.0",
-    "pytest-timeout >=2.2.0",
-    "sphinx >=7.2.6",
+    "pytest-timeout >=2.3.1",
+    "sphinx >=7.3.7",
     "tomli ~=2.0.1",
-    "watchdog >=4.0.0",
+    "watchdog >=2.3.0",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
