@@ -15,9 +15,13 @@ import threading
 import packaging.requirements
 import packaging.tags
 import packaging.version
-import tomli
 import watchdog.events
 import watchdog.observers
+
+if sys.version_info[:2] >= (3, 11):
+    import tomllib as toml
+else:
+    import tomli as toml
 
 
 class Platform(enum.Enum):
@@ -87,7 +91,7 @@ def init(python_paths: Iterable[os.PathLike] = [],
 
 def get_conf(path: Path = Path('pyproject.toml')) -> typing.Any:
     conf_str = path.read_text()
-    return tomli.loads(conf_str)
+    return toml.loads(conf_str)
 
 
 def add_python_paths(*paths: os.PathLike):
