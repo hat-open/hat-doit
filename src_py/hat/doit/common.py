@@ -39,6 +39,7 @@ class PyVersion(enum.Enum):
     CP310 = ('cp', 3, 10)
     CP311 = ('cp', 3, 11)
     CP312 = ('cp', 3, 12)
+    CP313 = ('cp', 3, 13)
 
 
 class VersionType(enum.Enum):
