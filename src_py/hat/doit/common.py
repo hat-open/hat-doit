@@ -174,9 +174,8 @@ def get_task_json_schema_repo(src_paths: Iterable[Path],
     src_paths = list(src_paths)
 
     def generate():
-        repo = hat.json.SchemaRepository(*src_paths)
-        data = repo.to_json()
-        hat.json.encode_file(data, dst_path, indent=None)
+        repo = hat.json.create_schema_repository(*src_paths)
+        hat.json.encode_file(repo, dst_path, indent=None)
 
     return {'actions': [generate],
             'file_dep': [*src_paths, *file_dep],
