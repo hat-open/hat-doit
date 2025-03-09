@@ -227,6 +227,9 @@ def get_task_copy(src_dst_paths: Iterable[tuple[Path, Path]],
         observer = watchdog.observers.Observer() if watch else None
 
         for src_path, dst_path in src_dst_paths:
+            if src_path.is_file():
+                dst_path.parent.mkdir(parents=True, exist_ok=True)
+
             cp_r(src_path, dst_path)
 
             if observer:
