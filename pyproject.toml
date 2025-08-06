@@ -7,15 +7,15 @@ requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 dependencies = [
     "doit >=0.36.0",
-    "flake8 >=7.1.2",
-    "furo >=2024.8.6",
+    "flake8 >=7.2.0",
+    "furo >=2025.7.19",
     "mkwhl ~=0.3.1",
-    "packaging >=24.2",
-    "pdoc >=15.0.0",
-    "pytest >=8.3.5",
-    "pytest-asyncio >=0.25.1",
-    "pytest-cov >=6.0.0",
-    "pytest-timeout >=2.3.1",
+    "packaging >=25.0",
+    "pdoc >=15.0.4",
+    "pytest >=8.4.1",
+    "pytest-asyncio >=0.26.0",
+    "pytest-cov >=6.1.1",
+    "pytest-timeout >=2.4.0",
     "sphinx >=8.2.3",
     "tomli >=2.0.1; python_version<'3.11'",
     "watchdog >=6.0.0",
@@ -34,7 +34,7 @@ build-backend = "hat.doit.pep517"
 backend-path = ["src_py"]
 requires = [
     "doit >=0.36.0",
-    "packaging >=24.2",
+    "packaging >=25.0",
     "tomli >=2.0.1; python_version<'3.11'",
     "watchdog >=6.0.0"
 ]
