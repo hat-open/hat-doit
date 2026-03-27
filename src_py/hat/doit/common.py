@@ -40,6 +40,7 @@ class PyVersion(enum.Enum):
     CP311 = ('cp', 3, 11)
     CP312 = ('cp', 3, 12)
     CP313 = ('cp', 3, 13)
+    CP314 = ('cp', 3, 14)
 
 
 class VersionType(enum.Enum):
@@ -84,10 +85,16 @@ def init(python_paths: Iterable[os.PathLike] = [],
          verbosity: int = 2
          ) -> dict:
     add_python_paths(*python_paths)
-    return {'backend': 'sqlite3',
+
+    conf = {'backend': 'sqlite3',
             'default_tasks': default_tasks,
             'verbosity': verbosity,
             'num_process': _get_num_process()}
+
+    if sys.version_info[:2] >= (3, 14):
+        conf['par_type'] = 'thread'
+
+    return conf
 
 
 def get_conf(path: Path = Path('pyproject.toml')) -> typing.Any:

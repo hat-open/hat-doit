@@ -1,14 +1,12 @@
 from pathlib import Path
 from typing import Iterable
 import functools
-import importlib.resources
 import os
 import shlex
 import shutil
 import subprocess
 import sysconfig
 
-from . import clang as hat_doit_clang
 from . import common
 
 
@@ -250,13 +248,15 @@ def get_task_clang_format(src_paths: Iterable[Path]
                           ) -> Iterable[dict]:
 
     def clang_format(src_path):
-        package = importlib.resources.files(hat_doit_clang)
-        with importlib.resources.as_file(package /
-                                         'clang-format.yaml') as style_path:
-            subprocess.run(['clang-format', '-i',
-                            f'-style=file:{style_path}',
-                            str(src_path)],
-                           check=True)
+        subprocess.run(['clang-format', '-i',
+                        ('-style="{'
+                         'BasedOnStyle: llvm, '
+                         'IndentWidth: 4, '
+                         'MaxEmptyLinesToKeep: 2, '
+                         'TabWidth: 4'
+                         '}"'),
+                        str(src_path)],
+                       check=True)
 
     for src_path in src_paths:
         yield {'name': str(src_path),
