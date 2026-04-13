@@ -48,11 +48,7 @@ run = [
     "watchdog >=6.0.0",
 ]
 build = [
-    "dependency-groups >=1.3.1",
-    "doit >=0.37.0",
-    "packaging >=26.0",
-    "tomli >=2.4.1; python_version<'3.11'",
-    "watchdog >=6.0.0"
+    {include-group = "run"},
 ]
 dev = [
     {include-group = "run"},
