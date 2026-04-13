@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 
+import dependency_groups
+
 import mkwhl
 
 from . import common
@@ -124,13 +126,21 @@ def create_pip_requirements(dst_path: Path,
                             *,
                             freeze: bool = False,
                             extras: list[str] | None = None,
+                            groups: list[str] | None = None,
                             src_path: Path = Path('pyproject.toml')):
-    project_conf = common.get_conf(src_path).get('project', {})
+    conf = common.get_conf(src_path)
+    project_conf = conf.get('project', {})
+    dependency_groups_conf = conf.get('dependency-groups', {})
 
     dependencies = collections.deque(project_conf.get('dependencies', []))
     for k, v in project_conf.get('optional-dependencies', {}).items():
         if extras is None or k in extras:
             dependencies.extend(v)
+
+    for group in dependency_groups_conf.keys():
+        if groups is None or group in groups:
+            dependencies.extend(
+                dependency_groups.resolve(dependency_groups_conf, group))
 
     if freeze:
         # TODO alternative implementation
@@ -154,7 +164,7 @@ def create_pip_requirements(dst_path: Path,
         dependencies = [f"{i['metadata']['name']}=={i['metadata']['version']}"
                         for i in report.get('install', [])]
 
-    dependencies = sorted(dependencies)
+    dependencies = sorted(set(dependencies))
     dst_path.write_text(''.join(f"{i}\n" for i in dependencies))
 
 

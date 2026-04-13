@@ -2,6 +2,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import dependency_groups
+
 from . import common
 
 
@@ -26,11 +28,11 @@ def build_sdist(sdist_directory, config_settings=None):
 
 
 def get_requires_for_build_wheel(config_settings=None):
-    return _get_requires()
+    return list(_get_requires())
 
 
 def get_requires_for_build_editable(config_settings=None):
-    return _get_requires()
+    return list(_get_requires())
 
 
 def _build_wheel(whl_dir, editable):
@@ -51,6 +53,10 @@ def _build_wheel(whl_dir, editable):
 def _get_requires():
     conf = common.get_conf()
     project_conf = conf.get('project', {})
+    dependency_groups_conf = conf.get('dependency-groups', {})
 
-    return [*project_conf.get('dependencies', []),
-            *project_conf.get('optional-dependencies', {}).get('dev', [])]
+    yield from project_conf.get('dependencies', [])
+    yield from project_conf.get('optional-dependencies', {}).get('dev', [])
+
+    if 'dev' in dependency_groups_conf:
+        yield from dependency_groups.resolve(dependency_groups_conf, 'dev')
