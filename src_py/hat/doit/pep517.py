@@ -52,11 +52,7 @@ def _build_wheel(whl_dir, editable):
 
 def _get_requires():
     conf = common.get_conf()
-    project_conf = conf.get('project', {})
     dependency_groups_conf = conf.get('dependency-groups', {})
 
-    yield from project_conf.get('dependencies', [])
-    yield from project_conf.get('optional-dependencies', {}).get('dev', [])
-
-    if 'dev' in dependency_groups_conf:
-        yield from dependency_groups.resolve(dependency_groups_conf, 'dev')
+    if 'build' in dependency_groups_conf:
+        yield from dependency_groups.resolve(dependency_groups_conf, 'build')

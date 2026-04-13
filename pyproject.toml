@@ -1,6 +1,6 @@
 [project]
 name = "hat-doit"
-version = "0.16.3"
+version = "0.16.4"
 description = "Hat build utility functions"
 readme = "README.rst"
 requires-python = ">=3.10"
@@ -29,6 +29,35 @@ classifiers = [
 [project.urls]
 Homepage = "http://hat-open.com"
 Repository = "https://github.com/hat-open/hat-doit.git"
+
+[dependency-groups]
+run = [
+    "dependency-groups >=1.3.1",
+    "doit >=0.37.0",
+    "flake8 >=7.3.0",
+    "furo >=2025.12.19",
+    "mkwhl ~=0.3.2",
+    "packaging >=26.0",
+    "pdoc >=16.0.0",
+    "pytest >=8.4.2",
+    "pytest-asyncio >=1.3.0",
+    "pytest-cov >=7.0.0",
+    "pytest-timeout >=2.4.0",
+    "sphinx >=9.1.0",
+    "tomli >=2.4.1; python_version<'3.11'",
+    "watchdog >=6.0.0",
+]
+build = [
+    "dependency-groups >=1.3.1",
+    "doit >=0.37.0",
+    "packaging >=26.0",
+    "tomli >=2.4.1; python_version<'3.11'",
+    "watchdog >=6.0.0"
+]
+dev = [
+    {include-group = "run"},
+    {include-group = "build"},
+]
 
 [build-system]
 build-backend = "hat.doit.pep517"

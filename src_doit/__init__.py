@@ -2,14 +2,12 @@ from pathlib import Path
 
 from hat.doit import common
 from hat.doit.py import (get_task_build_wheel,
-                         get_task_create_pip_requirements,
                          run_flake8)
 
 
 __all__ = ['task_clean_all',
            'task_build',
-           'task_check',
-           'task_pip_requirements']
+           'task_check']
 
 
 build_dir = Path('build')
@@ -30,8 +28,3 @@ def task_build():
 def task_check():
     """Check"""
     return {'actions': [(run_flake8, [src_py_dir])]}
-
-
-def task_pip_requirements():
-    """Create pip requirements"""
-    return get_task_create_pip_requirements()
