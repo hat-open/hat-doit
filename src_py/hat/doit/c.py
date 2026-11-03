@@ -1,5 +1,5 @@
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 import functools
 import os
 import shlex
@@ -249,12 +249,12 @@ def get_task_clang_format(src_paths: Iterable[Path]
 
     def clang_format(src_path):
         subprocess.run(['clang-format', '-i',
-                        ('-style="{'
+                        ('-style={'
                          'BasedOnStyle: llvm, '
                          'IndentWidth: 4, '
                          'MaxEmptyLinesToKeep: 2, '
                          'TabWidth: 4'
-                         '}"'),
+                         '}'),
                         str(src_path)],
                        check=True)
 
@@ -284,7 +284,7 @@ class CBuild:
         self._ld_libs = ld_libs
         self._task_dep = task_dep
 
-    def get_task_exe(self, exe_path: Path) -> dict:
+    def get_task_exe(self, exe_path: Path) -> Iterable[dict]:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
         yield {'name': str(exe_path),
@@ -299,7 +299,7 @@ class CBuild:
                'task_dep': self._task_dep,
                'targets': [exe_path]}
 
-    def get_task_lib(self, lib_path: Path) -> dict:
+    def get_task_lib(self, lib_path: Path) -> Iterable[dict]:
         obj_paths = [self._get_obj_path(src_path)
                      for src_path in self._src_paths]
         yield {'name': str(lib_path),
@@ -314,7 +314,7 @@ class CBuild:
                'task_dep': self._task_dep,
                'targets': [lib_path]}
 
-    def get_task_objs(self) -> dict:
+    def get_task_objs(self) -> Iterable[dict]:
         for src_path in self._src_paths:
             dep_path = self._get_dep_path(src_path)
             obj_path = self._get_obj_path(src_path)
@@ -331,7 +331,7 @@ class CBuild:
                    'task_dep': self._task_dep,
                    'targets': [obj_path]}
 
-    def get_task_deps(self) -> dict:
+    def get_task_deps(self) -> Iterable[dict]:
         for src_path in self._src_paths:
             dep_path = self._get_dep_path(src_path)
             yield {'name': str(dep_path),
@@ -360,12 +360,11 @@ def _parse_dep(path):
     if not path.exists():
         return
 
-    content = path.read_text()
-    if content:
+    content = path.read_text().replace('\\\n', ' ').replace('\n', ' ')
+    if ':' not in content:
         return
 
-    content = content.split('\n')
-    content[0] = content[0][content[0].find(':')+1:]
-    for i in content:
-        for path in i.replace(' \\\n', '').strip().split(' '):
-            yield Path(path)
+    _, deps = content.split(':', 1)
+
+    for path in shlex.split(deps):
+        yield Path(path)
