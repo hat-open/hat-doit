@@ -67,9 +67,8 @@ def build_npm(src_dir: Path,
         dst_conf['homepage'] = homepage
 
     if license is None:
-        license = (common.License(src_project_conf['license']['text'])
-                   if ('license' in src_project_conf and
-                       'text' in src_project_conf['license'])
+        license = (common.License(src_project_conf['license'])
+                   if 'license' in src_project_conf
                    else common.License.PROPRIETARY)
     dst_conf['license'] = license.value
 
