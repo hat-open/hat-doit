@@ -14,6 +14,18 @@ import mkwhl
 from . import common
 
 
+_PLATFORM_TAGS: dict[common.Platform, str] = {
+    common.Platform.WINDOWS_AMD64: 'win_amd64',
+    common.Platform.DARWIN_X86_64: 'macosx_10_13_x86_64',
+    common.Platform.LINUX_GNU_X86_64: 'manylinux_2_24_x86_64',
+    common.Platform.LINUX_GNU_AARCH64: 'manylinux_2_24_aarch64',
+    common.Platform.LINUX_GNU_ARMV7L: 'manylinux_2_24_armv7l',
+    common.Platform.LINUX_MUSL_X86_64: 'musllinux_1_2_x86_64',
+    common.Platform.LINUX_MUSL_AARCH64: 'musllinux_1_2_aarch64',
+    common.Platform.LINUX_MUSL_ARMV7L: 'musllinux_1_2_armv7l',
+}
+
+
 def get_task_build_wheel(src_dir: Path,
                          build_dir: Path,
                          *,
@@ -87,13 +99,21 @@ def build_wheel(src_dir: Path,
                 build_dir: Path,
                 *,
                 whl_name_path: Path | None = None,
-                py_versions: Iterable[common.PyVersion] = common.PyVersion,
+                py_versions: Iterable[common.PyVersion] = (),
                 py_limited_api: common.PyVersion | None = None,
                 platform: common.Platform | None = None,
                 is_purelib: bool = True,
                 **kwargs):
-    python_tag = _get_python_tag(py_versions)
-    abi_tag = _get_abi_tag(is_purelib, py_limited_api, py_versions)
+
+    py_versions = tuple(py_versions)
+    if is_purelib and py_limited_api is not None:
+        msg = 'py_limited_api cannot be set when is_purelib is True'
+        raise ValueError(msg)
+    if not (py_versions or is_purelib):
+        py_versions = get_py_versions(py_limited_api)
+
+    python_tag = _get_python_tag(is_purelib, py_versions)
+    abi_tag = _get_abi_tag(is_purelib, py_limited_api, python_tag)
     platform_tag = _get_platform_tag(platform)
 
     whl_name = mkwhl.create_wheel(src_dir=src_dir,
@@ -178,47 +198,31 @@ def get_py_versions(py_limited_api: common.PyVersion | None
             version.value >= py_limited_api.value]
 
 
-def _get_python_tag(py_versions):
+def _get_python_tag(is_purelib, py_versions):
+    if is_purelib or not py_versions:
+        return 'py3'
+
     return '.'.join(''.join(str(i) for i in py_version.value)
                     for py_version in py_versions)
 
 
-def _get_abi_tag(is_purelib, py_limited_api, py_versions):
+def _get_abi_tag(is_purelib, py_limited_api, python_tag):
     if is_purelib:
         return 'none'
 
     if py_limited_api:
         return 'abi3'
 
-    return _get_python_tag(py_versions)
+    return python_tag
 
 
-def _get_platform_tag(platform):
+def _get_platform_tag(platform: common.Platform | None) -> str:
     if not platform:
         return 'any'
 
-    if platform == common.Platform.WINDOWS_AMD64:
-        return 'win_amd64'
-
-    if platform == common.Platform.DARWIN_X86_64:
-        return 'macosx_10_13_x86_64'
-
-    if platform == common.Platform.LINUX_GNU_X86_64:
-        return 'manylinux_2_24_x86_64'
-
-    if platform == common.Platform.LINUX_GNU_AARCH64:
-        return 'manylinux_2_24_aarch64'
-
-    if platform == common.Platform.LINUX_GNU_ARMV7L:
-        return 'manylinux_2_24_armv7l'
-
-    if platform == common.Platform.LINUX_MUSL_X86_64:
-        return 'musllinux_1_2_x86_64'
-
-    if platform == common.Platform.LINUX_MUSL_AARCH64:
-        return 'musllinux_1_2_aarch64'
-
-    if platform == common.Platform.LINUX_MUSL_ARMV7L:
-        return 'musllinux_1_2_armv7l'
-
-    raise NotImplementedError()
+    try:
+        return _PLATFORM_TAGS[platform]
+    except KeyError:
+        msg = f'Unsupported platform: {platform}'
+        # do not chain the KeyError as a causing exception
+        raise NotImplementedError(msg) from None
