@@ -87,13 +87,21 @@ def build_wheel(src_dir: Path,
                 build_dir: Path,
                 *,
                 whl_name_path: Path | None = None,
-                py_versions: Iterable[common.PyVersion] = common.PyVersion,
+                py_versions: Iterable[common.PyVersion] = (),
                 py_limited_api: common.PyVersion | None = None,
                 platform: common.Platform | None = None,
                 is_purelib: bool = True,
                 **kwargs):
-    python_tag = _get_python_tag(py_versions)
-    abi_tag = _get_abi_tag(is_purelib, py_limited_api, py_versions)
+
+    py_versions = tuple(py_versions)
+    if is_purelib and py_limited_api is not None:
+        msg = 'py_limited_api cannot be set when is_purelib is True'
+        raise ValueError(msg)
+    if not (py_versions or is_purelib):
+        py_versions = get_py_versions(py_limited_api)
+
+    python_tag = _get_python_tag(is_purelib, py_versions)
+    abi_tag = _get_abi_tag(is_purelib, py_limited_api, python_tag)
     platform_tag = _get_platform_tag(platform)
 
     whl_name = mkwhl.create_wheel(src_dir=src_dir,
@@ -178,19 +186,22 @@ def get_py_versions(py_limited_api: common.PyVersion | None
             version.value >= py_limited_api.value]
 
 
-def _get_python_tag(py_versions):
+def _get_python_tag(is_purelib, py_versions):
+    if is_purelib or not py_versions:
+        return 'py3'
+
     return '.'.join(''.join(str(i) for i in py_version.value)
                     for py_version in py_versions)
 
 
-def _get_abi_tag(is_purelib, py_limited_api, py_versions):
+def _get_abi_tag(is_purelib, py_limited_api, python_tag):
     if is_purelib:
         return 'none'
 
     if py_limited_api:
         return 'abi3'
 
-    return _get_python_tag(py_versions)
+    return python_tag
 
 
 def _get_platform_tag(platform):
