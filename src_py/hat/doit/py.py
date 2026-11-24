@@ -14,6 +14,18 @@ import mkwhl
 from . import common
 
 
+_PLATFORM_TAGS: dict[common.Platform, str] = {
+    common.Platform.WINDOWS_AMD64: 'win_amd64',
+    common.Platform.DARWIN_X86_64: 'macosx_10_13_x86_64',
+    common.Platform.LINUX_GNU_X86_64: 'manylinux_2_24_x86_64',
+    common.Platform.LINUX_GNU_AARCH64: 'manylinux_2_24_aarch64',
+    common.Platform.LINUX_GNU_ARMV7L: 'manylinux_2_24_armv7l',
+    common.Platform.LINUX_MUSL_X86_64: 'musllinux_1_2_x86_64',
+    common.Platform.LINUX_MUSL_AARCH64: 'musllinux_1_2_aarch64',
+    common.Platform.LINUX_MUSL_ARMV7L: 'musllinux_1_2_armv7l',
+}
+
+
 def get_task_build_wheel(src_dir: Path,
                          build_dir: Path,
                          *,
@@ -204,32 +216,13 @@ def _get_abi_tag(is_purelib, py_limited_api, python_tag):
     return python_tag
 
 
-def _get_platform_tag(platform):
+def _get_platform_tag(platform: common.Platform | None) -> str:
     if not platform:
         return 'any'
 
-    if platform == common.Platform.WINDOWS_AMD64:
-        return 'win_amd64'
-
-    if platform == common.Platform.DARWIN_X86_64:
-        return 'macosx_10_13_x86_64'
-
-    if platform == common.Platform.LINUX_GNU_X86_64:
-        return 'manylinux_2_24_x86_64'
-
-    if platform == common.Platform.LINUX_GNU_AARCH64:
-        return 'manylinux_2_24_aarch64'
-
-    if platform == common.Platform.LINUX_GNU_ARMV7L:
-        return 'manylinux_2_24_armv7l'
-
-    if platform == common.Platform.LINUX_MUSL_X86_64:
-        return 'musllinux_1_2_x86_64'
-
-    if platform == common.Platform.LINUX_MUSL_AARCH64:
-        return 'musllinux_1_2_aarch64'
-
-    if platform == common.Platform.LINUX_MUSL_ARMV7L:
-        return 'musllinux_1_2_armv7l'
-
-    raise NotImplementedError()
+    try:
+        return _PLATFORM_TAGS[platform]
+    except KeyError:
+        msg = f'Unsupported platform: {platform}'
+        # do not chain the KeyError as a causing exception
+        raise NotImplementedError(msg) from None
