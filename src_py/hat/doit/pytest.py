@@ -28,10 +28,6 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    with contextlib.suppress(ImportError):
-        import hat.aio
-        hat.aio.init_asyncio()
-
     config.addinivalue_line("markers", "unit: mark unit test")
     config.addinivalue_line("markers", "sys: mark system test")
     config.addinivalue_line("markers", "perf: mark performance test")
